@@ -2,8 +2,8 @@
 
 int main() {
 	
-	string seq1 = "ABAsdlfjsld";
-	string seq2 = "sdlXXA";
+	string seq1 = "XXXXARSARSXCXBXXXXB";
+	string seq2 = "ARSARSGCGGB";
 	
 	cout << seq1 << endl << seq2 << endl;
 	
