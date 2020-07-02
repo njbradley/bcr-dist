@@ -5,6 +5,7 @@
 
 void load_bd_data(string path, vector<bcell>& cells);
 
-void save_dist_matrix(vector<bcell> cells);
+void save_dist_matrix(string path, vector<bcell>& cells);
+
 
 #endif

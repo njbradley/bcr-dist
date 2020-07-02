@@ -4,6 +4,25 @@
 #include "data.h"
 #include "table.h"
 
+unordered_map<string,pair<string,string> > vgenes_to_cdrs;
+unordered_map<string,string> vgenes_to_full_cdr;
+unordered_map<pair<char,char>,double,pair_hash> blosum_distances;
+vector<char> amino_acids;
+
+namespace dist_params {
+	int gap_penalty = 4;
+	int cdr3_weight = 3;
+	int v_weight = 1;
+}
+
+namespace cdr_params {
+	int start_cdr1 = 26;
+	int len_cdr1 = 12;
+	int start_cdr2 = 55;
+	int len_cdr2 = 10;
+}
+
+
 void load_persistant_data(string path) {
 	itablestream vgenetable(path + "data/ighv_genes_final.csv");
 	tablerow row(&vgenetable);
@@ -63,9 +82,5 @@ void load_blosum(string path) {
 	}
 }
 
-int main() {
-	load_persistant_data();
-	return 0;
-}
 
 #endif

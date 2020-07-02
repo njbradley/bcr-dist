@@ -2,6 +2,8 @@
 #define FILEIO_C
 
 #include "fileio.h"
+#include "cell.h"
+#include "table.h"
 
 void load_bd_data(string path, vector<bcell>& cells) {
 	itablestream itable(path);

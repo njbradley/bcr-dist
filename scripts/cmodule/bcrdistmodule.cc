@@ -1,9 +1,9 @@
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
-#include "scripts/cell.cc"
-#include "scripts/table.cc"
-#include "scripts/data.cc"
-#include "scripts/fileio.cc"
+#include "scripts/cell.h"
+#include "scripts/table.h"
+#include "scripts/data.h"
+#include "scripts/fileio.h"
 
 
 vector<bcell> cells;

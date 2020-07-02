@@ -42,72 +42,124 @@ double bcell::unaligned_dist(string seq1, string seq2) {
 	}
 }
 
+
+// void bcell::align_aa(string& longer, string& shorter) {
+// 	int num_gaps = longer.length() - shorter.length();
+//
+// 	vector<aa_match> matches;
+//
+// 	for (int i = 0; i < shorter.length(); i ++) {
+// 		int off = 0;
+// 		while (shorter[i] != longer[i+off] and off < num_gaps) {
+// 			off ++;
+// 		}
+// 		if (shorter[i] == longer[i+off]) {
+// 			//cout << "doing it " << i << ' ' << off << ' ' << shorter[i] << ' ' << longer[i+off] << endl;
+// 			aa_match match {i, i+off, 2};
+// 			while (shorter.substr(match.seq1start, match.len) == longer.substr(match.seq2start, match.len) and match.seq2start + match.len <= longer.length()) {
+// 				match.len ++;
+// 			}
+// 			match.len --;
+// 			i += match.len-1;
+// 			matches.push_back(match);
+// 			//cout << "match" << match.seq1start << ' ' << match.seq2start << ' ' << match.len << ' ' << shorter.substr(match.seq1start, match.len) << endl;
+// 		}
+// 	}
+//
+// 	int max_len = 0;
+//
+// 	for (int i = 0; i < matches.size(); i ++) {
+// 		for (int j = i+1; j < matches.size(); j ++) {
+// 			//cout << "1 " << matches[i].seq1start << ' ' << matches[i].seq2start << ' ' << matches[i].len << ' ' << shorter.substr(matches[i].seq1start, matches[i].len) << endl;
+// 			//cout << "2 " << matches[j].seq1start << ' ' << matches[j].seq2start << ' ' << matches[j].len << ' ' << shorter.substr(matches[j].seq1start, matches[j].len) << endl;
+// 			if (matches[i].seq2start - matches[i].seq1start > matches[j].seq2start - matches[j].seq1start) {
+// 				//cout << "problem!" << endl;
+// 				if (matches[i].len < matches[j].len) {
+// 					matches.erase(matches.begin()+i);
+// 					//cout << 1 << endl;
+// 					i --;
+// 					break;
+// 				} else {
+// 					//cout << 2 << endl;
+// 					matches.erase(matches.begin()+j);
+// 					j --;
+// 				}
+// 			}
+// 		}
+// 	}
+//
+// 	int placed_gaps = 0;
+// 	for (aa_match match : matches) {
+// 		//cout << "final match" << match.seq1start << ' ' << match.seq2start << ' ' << match.len << ' ' << shorter.substr(match.seq1start, match.len) << endl;
+// 		int new_gaps = match.seq2start - match.seq1start - placed_gaps;
+// 		for (int i = 0; i < new_gaps; i ++) {
+// 			shorter.insert(shorter.begin() + match.seq1start + placed_gaps, '.');
+// 		}
+// 		placed_gaps += new_gaps;
+// 	}
+//
+// 	for (int i = shorter.length(); i < longer.length(); i ++) {
+// 		shorter.push_back('.');
+// 	}
+//
+// 	cout << longer << endl << shorter << endl << endl;
+// }
+
+
 void bcell::align_aa(string& longer, string& shorter) {
 	int num_gaps = longer.length() - shorter.length();
-	
+
 	vector<aa_match> matches;
-	
+
 	int start_off = 0;
-	
+
 	for (int i = 0; i < shorter.length(); i ++) {
-		int off = start_off;
-		while (shorter[i] != longer[i+off] and off < num_gaps) {
-			off ++;
-		}
-		if (shorter[i] == longer[i+off]) {
-			//cout << "doing it " << i << ' ' << off << ' ' << shorter[i] << ' ' << longer[i+off] << endl;
-			aa_match match {i, i+off, 2};
-			while (shorter.substr(match.seq1start, match.len) == longer.substr(match.seq2start, match.len) and match.seq2start + match.len <= longer.length()) {
-				match.len ++;
-			}
-			match.len --;
-			start_off = off;
-			i += match.len-1;
-			matches.push_back(match);
-			cout << "match " << match.seq1start << ' ' << match.seq2start << ' ' << match.len << ' ' << shorter.substr(match.seq1start, match.len) << ' ' << off << endl;
-		}
-		// cout << start_off << endl;
-		// for (int off = start_off + tmp_start_off; off <= num_gaps; off ++) {
-		// 	if (shorter[i] == longer[i+off]) {
-		// 		//cout << "doing it " << i << ' ' << off << ' ' << shorter[i] << ' ' << longer[i+off] << endl;
-		// 		aa_match match {i, i+off, 2};
-		// 		while (shorter.substr(match.seq1start, match.len) == longer.substr(match.seq2start, match.len) and match.seq2start + match.len <= longer.length()) {
-		// 			match.len ++;
-		// 		}
-		// 		match.len --;
-		// 		//i += match.len-1;
-		// 		start_off = off;
-		// 		tmp_start_off = match.len;
-		// 		off += match.len-1;
-		// 		bool exists = false;
-		// 		matches.push_back(match);
-		// 		cout << "match " << match.seq1start << ' ' << match.seq2start << ' ' << match.len << ' ' << shorter.substr(match.seq1start, match.len) << ' ' << off << endl;
-		// 	}
+		// int off = 0;
+		// while (shorter[i] != longer[i+off] and off < num_gaps) {
+		// 	off ++;
 		// }
-	}
-	
-	int max_len = 0;
-	
-	for (int i = 0; i < matches.size(); i ++) {
-		for (int j = i+1; j < matches.size(); j ++) {
-			cout << "1 " << matches[i].seq1start << ' ' << matches[i].seq2start << ' ' << matches[i].len << ' ' << shorter.substr(matches[i].seq1start, matches[i].len) << endl;
-			cout << "2 " << matches[j].seq1start << ' ' << matches[j].seq2start << ' ' << matches[j].len << ' ' << shorter.substr(matches[j].seq1start, matches[j].len) << endl;
-			if (matches[i].seq2start - matches[i].seq1start > matches[j].seq2start - matches[j].seq1start) {
-				cout << "problem!" << endl;
-				if (matches[i].len < matches[j].len) {
-					matches.erase(matches.begin()+i);
-					cout << 1 << endl;
-					i --;
+		for (int off = 0; off <= num_gaps; off ++) {
+			cout << "off " << off << endl;
+			if (shorter[i] == longer[i+off]) {
+				//cout << "doing it " << i << ' ' << off << ' ' << shorter[i] << ' ' << longer[i+off] << endl;
+				aa_match match {i, i+off, 2};
+				while (shorter.substr(match.seq1start, match.len) == longer.substr(match.seq2start, match.len) and match.seq2start + match.len <= longer.length()) {
+					match.len ++;
+				}
+				match.len --;
+				
+				int deleted = 0;
+				int size = matches.size();
+				int new_end = matches.size()-1;
+				cout << "start " << new_end << endl;
+				while (off < start_off and matches.size() > 0 and match.len > matches[new_end].len + deleted) {
+					cout << off << ' ' << start_off << ' ' << deleted << ' ' << new_end << endl;
+					deleted += matches[new_end].len;
+					new_end --;
+					//matches.erase(matches.end()-1);
+					if (new_end == -1) {
+						start_off = 0;
+					} else {
+						start_off = matches[new_end].seq2start - matches[new_end].seq1start;
+					}
+				}
+				cout << "end " << off << ' ' << start_off << ' ' << deleted << ' ' << new_end << endl;
+				
+				if (off >= start_off) {
+					if (new_end+1 < matches.size()) {
+						matches.erase(matches.begin() + new_end+1, matches.end());
+					}
+					start_off = off;
+					i += match.len-1;
+					matches.push_back(match);
+					cout << "match " << match.seq1start << ' ' << match.seq2start << ' ' << match.len << ' ' << shorter.substr(match.seq1start, match.len) << ' ' << off << endl;
+					cout << matches.size() << endl;
 					break;
-				} else {
-					cout << 2 << endl;
-					matches.erase(matches.begin()+j);
-					j --;
 				}
 			}
 		}
 	}
-	
+
 	int placed_gaps = 0;
 	for (aa_match match : matches) {
 		cout << "final match" << match.seq1start << ' ' << match.seq2start << ' ' << match.len << ' ' << shorter.substr(match.seq1start, match.len) << endl;
@@ -117,12 +169,12 @@ void bcell::align_aa(string& longer, string& shorter) {
 		}
 		placed_gaps += new_gaps;
 	}
-	
+
 	for (int i = shorter.length(); i < longer.length(); i ++) {
 		shorter.push_back('.');
 	}
-	
-	cout << longer << endl << shorter << endl << endl;
+
+	//cout << longer << endl << shorter << endl << endl;
 }
 
 double bcell::distance(bcell* other) {

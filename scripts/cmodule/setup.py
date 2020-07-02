@@ -2,7 +2,7 @@ import distutils.core as dcore
 import os
 
 module1 = dcore.Extension('bcrdist',
-                    sources = ['bcrdistmodule.cc'])
+                    sources = ['bcrdistmodule.cc', 'scripts/table.cc', 'scripts/cell.cc', 'scripts/data.cc', 'scripts/fileio.cc'])
 
 dcore.setup (name = 'bcr-dist',
        version = '1.0',
