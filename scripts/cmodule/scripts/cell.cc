@@ -118,8 +118,14 @@ void bcell::align_aa(string& longer, string& shorter) {
 		// while (shorter[i] != longer[i+off] and off < num_gaps) {
 		// 	off ++;
 		// }
+		
+		aa_match final_match {0,0,0};
+		int final_new_end = 0;
+		int final_off = 0;
+		int score = 0;
+		
 		for (int off = 0; off <= num_gaps; off ++) {
-			cout << "off " << off << endl;
+			//cout << "off " << off << endl;
 			if (shorter[i] == longer[i+off]) {
 				//cout << "doing it " << i << ' ' << off << ' ' << shorter[i] << ' ' << longer[i+off] << endl;
 				aa_match match {i, i+off, 2};
@@ -131,38 +137,49 @@ void bcell::align_aa(string& longer, string& shorter) {
 				int deleted = 0;
 				int size = matches.size();
 				int new_end = matches.size()-1;
-				cout << "start " << new_end << endl;
-				while (off < start_off and matches.size() > 0 and match.len > matches[new_end].len + deleted) {
-					cout << off << ' ' << start_off << ' ' << deleted << ' ' << new_end << endl;
+				int new_start_off = start_off;
+				//cout << "start " << new_end << endl;
+				while (off < new_start_off and matches.size() > 0 and match.len > matches[new_end].len + deleted) {
+					//cout << off << ' ' << new_start_off << ' ' << deleted << ' ' << new_end << endl;
 					deleted += matches[new_end].len;
 					new_end --;
 					//matches.erase(matches.end()-1);
 					if (new_end == -1) {
-						start_off = 0;
+						new_start_off = 0;
 					} else {
-						start_off = matches[new_end].seq2start - matches[new_end].seq1start;
+						new_start_off = matches[new_end].seq2start - matches[new_end].seq1start;
 					}
 				}
-				cout << "end " << off << ' ' << start_off << ' ' << deleted << ' ' << new_end << endl;
+				//cout << "end " << off << ' ' << new_start_off << ' ' << deleted << ' ' << new_end << endl;
 				
-				if (off >= start_off) {
-					if (new_end+1 < matches.size()) {
-						matches.erase(matches.begin() + new_end+1, matches.end());
+				if (off >= new_start_off) {
+					off += match.len-1;
+					//cout << "match " << match.seq1start << ' ' << match.seq2start << ' ' << match.len << ' ' << shorter.substr(match.seq1start, match.len) << endl;
+					int newscore = match.len - deleted;
+					//cout << "score " << newscore << endl;
+					if (newscore > score) {
+						final_match = match;
+						score = newscore;
+						final_off = off;
+						final_new_end = new_end;
 					}
-					start_off = off;
-					i += match.len-1;
-					matches.push_back(match);
-					cout << "match " << match.seq1start << ' ' << match.seq2start << ' ' << match.len << ' ' << shorter.substr(match.seq1start, match.len) << ' ' << off << endl;
-					cout << matches.size() << endl;
-					break;
 				}
 			}
+		}
+		if (final_match.len > 0) {
+			if (final_new_end+1 < matches.size()) {
+				matches.erase(matches.begin() + final_new_end+1, matches.end());
+			}
+			start_off = final_off;
+			i += final_match.len-1;
+			matches.push_back(final_match);
+			//cout << "good match " << final_match.seq1start << ' ' << final_match.seq2start << ' ' << final_match.len << ' ' << shorter.substr(final_match.seq1start, final_match.len) << endl;
 		}
 	}
 
 	int placed_gaps = 0;
 	for (aa_match match : matches) {
-		cout << "final match" << match.seq1start << ' ' << match.seq2start << ' ' << match.len << ' ' << shorter.substr(match.seq1start, match.len) << endl;
+		//cout << "final match" << match.seq1start << ' ' << match.seq2start << ' ' << match.len << ' ' << shorter.substr(match.seq1start, match.len) << endl;
 		int new_gaps = match.seq2start - match.seq1start - placed_gaps;
 		for (int i = 0; i < new_gaps; i ++) {
 			shorter.insert(shorter.begin() + match.seq1start + placed_gaps, '.');
