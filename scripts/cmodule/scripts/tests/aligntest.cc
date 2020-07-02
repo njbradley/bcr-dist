@@ -2,6 +2,18 @@
 
 int main(int numargs, const char** args) {
 	
+	vector<pair<string,string> > {
+		{"XABC",
+		 "ABC"},
+		{"XAXBXC",
+		 "ABCB"},
+		{"XAXAXAXBCDXX",
+		 "A_A_A__BCD"},
+		{"VFVDVDVD",
+		 "WEWEW"},
+		{
+	
+	
 	string seq1 = "sjkfksdlhfajkshdlfka";
 	string seq2 = "HJGJK";
 	
