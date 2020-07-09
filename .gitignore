@@ -1,4 +1,4 @@
-data
-scripts/cmodule/build
+/data/
+/scripts/cmodule/build/
 *.out
-data/scripts/processing/*
+/scripts/data/processing/
