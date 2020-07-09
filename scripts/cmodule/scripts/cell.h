@@ -3,17 +3,31 @@
 
 #include "classes.h"
 
-struct bcell {
-	string id;
+struct bcell_chain {
 	string cdr1;
 	string cdr2;
 	string cdr3;
-	bcell(string newid, string v_gene, string newcdr3);
-	bcell(string newid, string newcdr1, string newcdr2, string newcdr3);
-	double distance(bcell* other);
+	bcell_chain(string v_gene, string newcdr3);
+	bcell_chain(string newcdr1, string newcdr2, string newcdr3);
+	double distance(bcell_chain* other);
 	static double aadist(string& seq1, string& seq2);
 	static double unaligned_dist(string seq1, string seq2);
 	static void align_aa(string& longer, string& shorter);
+};
+
+struct bcell_single {
+	string id;
+	bcell_chain chain;
+	double distance(bcell_single* other);
+	bcell_single(string newid, bcell_chain newchain);
+};
+
+struct bcell_double {
+	string id;
+	bcell_chain heavy;
+	bcell_chain light;
+	double distance(bcell_double* other);
+	bcell_double(string newid, bcell_chain newheavy, bcell_chain newlight);
 };
 
 struct aa_match {

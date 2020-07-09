@@ -4,7 +4,7 @@
 #include "cell.h"
 #include "data.h"
 
-bcell::bcell(string newid, string v_gene, string newcdr3): id(newid), cdr3(newcdr3) {
+bcell_chain::bcell_chain(string v_gene, string newcdr3): cdr3(newcdr3) {
 	//cout << newid << ' ' << v_gene << ' ' << newcdr3 << endl;
 	stringstream vgeness(v_gene);
 	while (!vgeness.eof() and vgenes_to_cdrs.find(v_gene) == vgenes_to_cdrs.end()) {
@@ -17,11 +17,11 @@ bcell::bcell(string newid, string v_gene, string newcdr3): id(newid), cdr3(newcd
 	//cout << cdr1 << ' ' << cdr2 << endl;
 }
 
-bcell::bcell(string newid, string newcdr1, string newcdr2, string newcdr3): id(newid), cdr1(newcdr1), cdr2(newcdr2), cdr3(newcdr3) {
+bcell_chain::bcell_chain(string newcdr1, string newcdr2, string newcdr3): cdr1(newcdr1), cdr2(newcdr2), cdr3(newcdr3) {
 	
 }
 
-double bcell::aadist(string& seq1, string& seq2) {
+double bcell_chain::aadist(string& seq1, string& seq2) {
 	double distance = 0;
 	for (int i = 0; i < seq1.length(); i ++) {
 		distance += blosum_distances[pair<char,char>(seq1[i],seq2[i])];
@@ -30,7 +30,7 @@ double bcell::aadist(string& seq1, string& seq2) {
 	return distance;
 }
 
-double bcell::unaligned_dist(string seq1, string seq2) {
+double bcell_chain::unaligned_dist(string seq1, string seq2) {
 	if (seq1.length() == seq2.length()) {
 		return aadist(seq1, seq2);
 	} else if (seq1.length() < seq2.length()) {
@@ -43,7 +43,7 @@ double bcell::unaligned_dist(string seq1, string seq2) {
 }
 
 
-void bcell::align_aa(string& longer, string& shorter) {
+void bcell_chain::align_aa(string& longer, string& shorter) {
 	int num_gaps = longer.length() - shorter.length();
 
 	vector<aa_match> matches;
@@ -119,12 +119,37 @@ void bcell::align_aa(string& longer, string& shorter) {
 	}
 }
 
-double bcell::distance(bcell* other) {
+double bcell_chain::distance(bcell_chain* other) {
 	int distance = 0;
 	distance += aadist(cdr1, other->cdr1) * dist_params::v_weight;
 	distance += aadist(cdr2, other->cdr2) * dist_params::v_weight;
 	distance += unaligned_dist(cdr3, other->cdr3) * dist_params::cdr3_weight;
 	return distance;
+}
+
+
+
+
+
+
+
+bcell_single::bcell_single(string newid, bcell_chain newchain): id(newid), chain(newchain) {
+	
+}
+
+double bcell_single::distance(bcell_single* other) {
+	return chain.distance(&other->chain);
+}
+
+
+
+
+bcell_double::bcell_double(string newid, bcell_chain newheavy, bcell_chain newlight): id(newid), heavy(newheavy), light(newlight) {
+	
+}
+
+double bcell_double::distance(bcell_double* other) {
+	return heavy.distance(&other->heavy) + light.distance(&other->light);
 }
 
 #endif

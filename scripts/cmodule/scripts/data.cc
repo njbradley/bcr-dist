@@ -24,7 +24,7 @@ namespace cdr_params {
 
 
 void load_persistant_data(string path) {
-	itablestream vgenetable(path + "data/ighv_genes_final.csv");
+	itablestream vgenetable(path + "data/ig_all_genes.csv");
 	tablerow row(&vgenetable);
 	while (!row.eof) {
 		vgenes_to_full_cdr[row.get("vgene")] = row.get("fullseq");
@@ -56,9 +56,13 @@ void load_blosum(string path) {
 		ifile >> lett;
 	}
 	amino_acids.push_back(lett);
-	for (int i = 0; i < 23; i ++) {
-		ifile >> lett;
+	string linestr;
+	getline(ifile, linestr);
+	stringstream line(linestr);
+	line >> lett;
+	while (!line.eof()) {
 		amino_acids.push_back(lett);
+		line >> lett;
 	}
 	
 	char aa1;

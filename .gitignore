@@ -1,3 +1,4 @@
 data
 scripts/cmodule/build
 *.out
+data/scripts/processing/*

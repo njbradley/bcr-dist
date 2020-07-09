@@ -25,6 +25,8 @@ using std::pair;
 struct itablestream;
 struct tablerow;
 struct otablestream;
-struct bcell;
+struct bcell_chain;
+struct bcell_double;
+struct bcell_single;
 
 #endif
