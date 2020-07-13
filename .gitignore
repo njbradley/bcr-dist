@@ -2,3 +2,5 @@
 /scripts/cmodule/build/
 *.out
 /scripts/data/processing/
+__pycache__
+*.pyc

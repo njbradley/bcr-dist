@@ -171,6 +171,10 @@ static PyObject* py_bcell_double_vector_get_dist_matrix(py_bcell_double_vector* 
   return PyTuple_Pack(2, np_data, cell_ids);
 }
 
+static PyObject* py_bcell_double_vector_name(py_bcell_double_vector* self) {
+  return PyUnicode_FromString(self->name);
+}
+
 static PyMethodDef py_bcell_double_vector_methods[] = {
     {"generate_dist_matrix", (PyCFunction) py_bcell_double_vector_generate_dist_matrix, METH_VARARGS,
      "calculates the distance matrix and writes it to a file"},
@@ -178,6 +182,8 @@ static PyMethodDef py_bcell_double_vector_methods[] = {
      "loads data from two bd files"},
     {"dist_matrix", (PyCFunction) py_bcell_double_vector_get_dist_matrix, METH_NOARGS,
      "returns a numpy array of the distance matrix as well as all of the cell ids"},
+    {"name", (PyCFunction) py_bcell_double_vector_name, METH_NOARGS,
+     "returns the name"},
     {NULL}  /* Sentinel */
 };
 
@@ -187,7 +193,7 @@ static PyTypeObject py_bcell_double_vector_type = {
   .tp_basicsize = sizeof(py_bcell_double_vector),
   .tp_itemsize = 0,
   .tp_dealloc = (destructor) py_bcell_double_vector_dealloc,
-  .tp_flags = Py_TPFLAGS_DEFAULT,
+  .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
   .tp_doc = "An array of double stranded bcells",
   .tp_methods = py_bcell_double_vector_methods,
   .tp_init = (initproc)py_bcell_double_vector_type_init,
