@@ -60,8 +60,8 @@ static PyTypeObject py_bcell_double_type = {
 typedef struct {
   PyObject_HEAD
   vector<bcell_double> cells;
-  const char* name;
-  const char* dist_file;
+  string name;
+  string dist_file;
 } py_bcell_double_vector;
 
 static void py_bcell_double_vector_dealloc(py_bcell_double_vector *self) {
@@ -70,10 +70,13 @@ static void py_bcell_double_vector_dealloc(py_bcell_double_vector *self) {
 
 static int py_bcell_double_vector_type_init(py_bcell_double_vector *self, PyObject *args) {
   self->cells = vector<bcell_double>();
-  if (!PyArg_ParseTuple(args, "|s", &self->name)) {
-    self->name = nullptr;
+  const char* newname = nullptr;
+  if (!PyArg_ParseTuple(args, "|s", &newname)) {
+    return -1;
   }
-  self->dist_file = nullptr;
+  if (newname != nullptr) {
+    self->name = newname;
+  }
   return 0;
 }
 
@@ -89,19 +92,14 @@ static PyObject* py_bcell_double_vector_load_bd_data(py_bcell_double_vector *sel
     string heavy_str = heavy;
     string light_str = light;
     
-    if (self->name == nullptr) {
+    if (self->name == "") {
       string newname;
       for (int i = 0; i < heavy_str.length() and i < light_str.length(); i ++) {
         if (heavy_str[i] == light_str[i]) {
           newname.push_back(heavy_str[i]);
         }
       }
-      char* name = new char[newname.length()+1];
-      for (int i = 0; i < newname.length(); i ++) {
-        name[i] = newname[i];
-      }
-      name[newname.length()] = 0;
-      self->name = name;
+      self->name = newname;
     }
     
     self->cells.clear();
@@ -112,18 +110,17 @@ static PyObject* py_bcell_double_vector_load_bd_data(py_bcell_double_vector *sel
 }
 
 static PyObject* py_bcell_double_vector_generate_dist_matrix(py_bcell_double_vector *self, PyObject *args) {
-    if (!PyArg_ParseTuple(args, "|s", &self->dist_file)) {
+    const char* new_dist_file = nullptr;
+    if (!PyArg_ParseTuple(args, "|s", &new_dist_file)) {
       return nullptr;
     }
     
-    if (self->dist_file == nullptr) {
-      if (self->name == nullptr) {
-        self->name = "null";
-      }
-      char* dist_filename = new char[strlen(self->name) + 10];
-      strcpy(dist_filename, self->name);
-      strcat(dist_filename, "_dist.csv");
-      self->dist_file = dist_filename;
+    if (new_dist_file != nullptr) {
+      self->dist_file = new_dist_file;
+    }
+    
+    if (self->dist_file == "") {
+      self->dist_file = self->name + "_dist.csv";
     }
     
     save_dist_matrix(self->dist_file, self->cells);
@@ -132,8 +129,8 @@ static PyObject* py_bcell_double_vector_generate_dist_matrix(py_bcell_double_vec
 }
 
 static PyObject* py_bcell_double_vector_get_dist_matrix(py_bcell_double_vector* self, PyObject* args) {
-  if (self->dist_file == nullptr) {
-    py_bcell_double_vector_generate_dist_matrix(self, Py_None);
+  if (self->dist_file == "") {
+    py_bcell_double_vector_generate_dist_matrix(self, PyTuple_New(0));
   }
   
   itablestream itable(self->dist_file);
@@ -172,7 +169,7 @@ static PyObject* py_bcell_double_vector_get_dist_matrix(py_bcell_double_vector* 
 }
 
 static PyObject* py_bcell_double_vector_name(py_bcell_double_vector* self) {
-  return PyUnicode_FromString(self->name);
+  return PyUnicode_FromString(self->name.c_str());
 }
 
 static PyMethodDef py_bcell_double_vector_methods[] = {
@@ -199,6 +196,7 @@ static PyTypeObject py_bcell_double_vector_type = {
   .tp_init = (initproc)py_bcell_double_vector_type_init,
   .tp_new = PyType_GenericNew,
 };
+
 
 
 
