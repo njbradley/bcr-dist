@@ -1,5 +1,6 @@
 /data/
-/bcrdist/cmodule/build/
+/bcrdist/cmodule/build/*
+!/bcrdist/cmodule/build/__init__.py
 *.out
 /bcrdist/data/processing/
 __pycache__

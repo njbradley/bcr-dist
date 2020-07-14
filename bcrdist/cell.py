@@ -7,7 +7,7 @@ import sys
 
 class array(bcrdist.bcellarray):
     '''
-    An array of double stranded bcells, with  a light and heavy chain.
+    An array of bcells, with either a light and heavy chain or a single heavy chain
     This python subclass of the pure c class bcrdist.dsbcellarray implements
     new plotting functions like generate kpca data, which invoke python
     libraries and functions
