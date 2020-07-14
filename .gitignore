@@ -1,6 +1,6 @@
 /data/
-/scripts/cmodule/build/
+/bcrdist/cmodule/build/
 *.out
-/scripts/data/processing/
+/bcrdist/data/processing/
 __pycache__
 *.pyc

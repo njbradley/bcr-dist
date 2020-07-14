@@ -1,6 +1,6 @@
-import dsarray
+import cell
 
-arr = dsarray.dsarray("../data/Hutchinson3-BCR")
+arr = cell.array()
 
 arr.load_bd_data("../data/Hutchinson-BCRigh_DominantCDR3.csv", "../data/Hutchinson-BCRigl_DominantCDR3.csv")
 
