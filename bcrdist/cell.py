@@ -1,11 +1,14 @@
 import sklearn.decomposition as skdecomp
 import sklearn.manifold as skmanifold
-from cmodule.build import bcrdist
+from . import cbcrdist
 import matplotlib.pyplot as plot
 import numpy as np
 import sys
+import os
 
-class array(bcrdist.bcellarray):
+cbcrdist.init(os.path.dirname(os.path.abspath(__file__)) + '/')
+
+class array(cbcrdist.bcellarray):
     '''
     An array of bcells, with either a light and heavy chain or a single heavy chain
     This python subclass of the pure c class bcrdist.dsbcellarray implements

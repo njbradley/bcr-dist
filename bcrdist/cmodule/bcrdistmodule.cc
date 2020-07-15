@@ -45,7 +45,7 @@ vector<bcell_double> cells;
 //
 // static PyTypeObject py_bcell_double_type = {
 //   PyVarObject_HEAD_INIT(NULL, 0)
-//   .tp_name = "bcrdist.dsbcell",
+//   .tp_name = "cbcrdist.dsbcell",
 //   .tp_basicsize = sizeof(py_bcell_double),
 //   .tp_itemsize = 0,
 //   .tp_dealloc = (destructor) py_bcell_double_dealloc,
@@ -118,6 +118,45 @@ static PyObject* py_bcell_vector_load_bd_data(py_bcell_vector *self, PyObject *a
     }
     
     Py_RETURN_NONE;
+}
+
+static PyObject* py_bcell_vector_load(py_bcell_vector* self, PyObject* args) {
+  const char* filename;
+  if (!PyArg_ParseTuple(args, "s", &filename)) {
+    return nullptr;
+  }
+  
+  ifstream ifile(filename);
+  string line;
+  getline(ifile, line, ':');
+  ifile >> line;
+  if (self->name == "") {
+    self->name = line;
+  }
+  
+  getline(ifile, line, ':');
+  ifile >> self->num_strands;
+  
+  getline(ifile, line);
+  getline(ifile, line);
+  
+  if (self->num_strands == 1) {
+    getline(ifile, line);
+    while (!ifile.eof()) {
+      stringstream ss(line);
+      self->single_cells.emplace_back(ss);
+      getline(ifile, line);
+    }
+  } else if (self->num_strands == 2) {
+    getline(ifile, line);
+    while (!ifile.eof()) {
+      stringstream ss(line);
+      self->double_cells.emplace_back(ss);
+      getline(ifile, line);
+    }
+  }
+  
+  Py_RETURN_NONE;
 }
 
 static PyObject* py_bcell_vector_generate_dist_matrix(py_bcell_vector *self, PyObject *args) {
@@ -206,13 +245,40 @@ static PyObject* py_bcell_vector_summary(py_bcell_vector* self) {
 }
 
 static PyObject* py_bcell_vector_repr(py_bcell_vector* self) {
-  string message = "<bcrdist.bcellarray built in object\n";
+  string message = "<cbcrdist.bcellarray built in object\n";
   PyObject* summary_pystr = py_bcell_vector_summary(self);
   const char* summary = PyUnicode_AsUTF8(summary_pystr);
   Py_DECREF(summary_pystr);
   message += summary;
   message += '>';
   return PyUnicode_FromString(message.c_str());
+}
+
+static PyObject* py_bcell_vector_save(py_bcell_vector* self, PyObject* args) {
+  const char* filename;
+  
+  if (!PyArg_ParseTuple(args, "s", &filename)) {
+    return nullptr;
+  }
+  
+  ofstream ofile(filename);
+  ofile << "# name:" << self->name << endl;
+  ofile << "# num_strands:" << self->num_strands << endl;
+  if (self->num_strands == 1) {
+    ofile << "id\tcdr1\tcdr2\tcdr3" << endl;
+    for (bcell_single& cell : self->single_cells) {
+      cell.to_file(ofile);
+      ofile << endl;
+    }
+  } else if (self->num_strands == 2) {
+    ofile << "id\thcdr1\thcdr2\thcdr3\tlcdr1\tlcdr2\tlcdr3" << endl;
+    for (bcell_double& cell : self->double_cells) {
+      cell.to_file(ofile);
+      ofile << endl;
+    }
+  }
+  
+  Py_RETURN_NONE;
 }
 
 static PyMethodDef py_bcell_vector_methods[] = {
@@ -226,12 +292,16 @@ static PyMethodDef py_bcell_vector_methods[] = {
      "returns the name"},
     {"summary", (PyCFunction) py_bcell_vector_summary, METH_NOARGS,
      "returns a string summary of the cell array"},
+    {"save", (PyCFunction) py_bcell_vector_save, METH_VARARGS,
+     "returns a string summary of the cell array"},
+    {"load", (PyCFunction) py_bcell_vector_load, METH_VARARGS,
+     "returns a string summary of the cell array"},
     {NULL}  /* Sentinel */
 };
 
 static PyTypeObject py_bcell_vector_type = {
   PyVarObject_HEAD_INIT(NULL, 0)
-  .tp_name = "bcrdist.bcellarray",
+  .tp_name = "cbcrdist.bcellarray",
   .tp_basicsize = sizeof(py_bcell_vector),
   .tp_itemsize = 0,
   .tp_dealloc = (destructor) py_bcell_vector_dealloc,
@@ -273,25 +343,50 @@ static PyTypeObject py_bcell_vector_type = {
 // }
 
 
+string get_path() {
+  PyObject* mainmodule = PyImport_AddModule("__main__");
+  PyRun_SimpleString("import os; basepath = os.path.dirname(os.path.abspath(__file__))");
+  PyObject* pres = PyObject_GetAttrString(mainmodule, "basepath");
+  const char* path = PyUnicode_AsUTF8(pres);
+  string result = path;
+  result = result + '/';
+  Py_DECREF(pres);
+  Py_DECREF(mainmodule);
+  return result;
+}
 
-    
 
-static PyMethodDef bcrdistMethods[] = {
+PyObject* py_init(PyObject* self, PyObject* args) {
+  const char* base_path;
+  if(!PyArg_ParseTuple(args, "s", &base_path)) {
+    return nullptr;
+  }
+  
+  load_persistant_data(base_path);
+  
+  Py_RETURN_NONE;
+}
+
+static PyMethodDef cbcrdistMethods[] = {
   // {"load_bd_data", py_load_bd_data, METH_VARARGS, "Get a random number"},
+  {"init", py_init, METH_VARARGS, "loads in persistant data"},
   {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 
-static struct PyModuleDef bcrdistmodule = {
+static struct PyModuleDef cbcrdistmodule = {
     PyModuleDef_HEAD_INIT,
-    "bcrdist",   /* name of module */
+    "cbcrdist",   /* name of module */
     NULL, /* module documentation, may be NULL */
     -1,       /* size of per-interpreter state of the module,
                  or -1 if the module keeps state in global variables. */
-    bcrdistMethods
+    cbcrdistMethods
 };
 
-PyMODINIT_FUNC PyInit_bcrdist(void) {
-    load_persistant_data();
+PyMODINIT_FUNC PyInit_cbcrdist(void) {
+    
+    //string path = get_path();
+    //load_persistant_data();
+    
     
     if (PyType_Ready(&py_bcell_vector_type) < 0) {
       return nullptr;
@@ -300,7 +395,7 @@ PyMODINIT_FUNC PyInit_bcrdist(void) {
     //   return nullptr;
     // }
     
-    PyObject* module = PyModule_Create(&bcrdistmodule);
+    PyObject* module = PyModule_Create(&cbcrdistmodule);
     import_array();
     
     Py_INCREF(&py_bcell_vector_type);

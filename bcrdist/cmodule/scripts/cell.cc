@@ -21,6 +21,14 @@ bcell_chain::bcell_chain(string newcdr1, string newcdr2, string newcdr3): cdr1(n
 	
 }
 
+bcell_chain::bcell_chain(istream& ifile) {
+	ifile >> cdr1 >> cdr2 >> cdr3;
+}
+
+void bcell_chain::to_file(ostream& ofile) {
+	ofile << cdr1 << '\t' << cdr2 << '\t' << cdr3 << '\t';
+}
+
 double bcell_chain::aadist(string& seq1, string& seq2) {
 	double distance = 0;
 	for (int i = 0; i < seq1.length(); i ++) {
@@ -130,11 +138,24 @@ double bcell_chain::distance(bcell_chain* other) {
 
 
 
-
+string get_id(istream& ifile) {
+	string newid;
+	ifile >> newid;
+	return newid;
+}
 
 
 bcell_single::bcell_single(string newid, bcell_chain newchain): id(newid), chain(newchain) {
 	
+}
+
+bcell_single::bcell_single(istream& ifile): id(get_id(ifile)), chain(ifile) {
+	
+}
+
+void bcell_single::to_file(ostream& ofile) {
+	ofile << id << '\t';
+	chain.to_file(ofile);
 }
 
 double bcell_single::distance(bcell_single* other) {
@@ -146,6 +167,16 @@ double bcell_single::distance(bcell_single* other) {
 
 bcell_double::bcell_double(string newid, bcell_chain newheavy, bcell_chain newlight): id(newid), heavy(newheavy), light(newlight) {
 	
+}
+
+bcell_double::bcell_double(istream& ifile): id(get_id(ifile)), heavy(ifile), light(ifile) {
+	
+}
+
+void bcell_double::to_file(ostream& ofile) {
+	ofile << id << '\t';
+	heavy.to_file(ofile);
+	light.to_file(ofile);
 }
 
 double bcell_double::distance(bcell_double* other) {
