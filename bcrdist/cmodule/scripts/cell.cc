@@ -4,11 +4,15 @@
 #include "cell.h"
 #include "data.h"
 
+
 bcell_chain::bcell_chain(string v_gene, string newcdr3): cdr3(newcdr3) {
 	//cout << newid << ' ' << v_gene << ' ' << newcdr3 << endl;
 	stringstream vgeness(v_gene);
 	while (!vgeness.eof() and vgenes_to_cdrs.find(v_gene) == vgenes_to_cdrs.end()) {
 		getline(vgeness, v_gene, ';');
+		if (v_gene.find('*') == string::npos) {
+			v_gene += "*01";
+		}
 	}
 	//cout << v_gene << endl;
 	pair<string,string> cdrs = vgenes_to_cdrs[v_gene];

@@ -1,8 +1,10 @@
 import sklearn.decomposition as skdecomp
 import sklearn.manifold as skmanifold
+import sklearn.preprocessing as skpre
 from . import cbcrdist
 import matplotlib.pyplot as plot
 import numpy as np
+from . import umap
 import sys
 import os
 
@@ -23,19 +25,24 @@ class array(cbcrdist.bcellarray):
         pcafunc = skdecomp.KernelPCA(75, kernel='precomputed')
         tsnefunc = skmanifold.TSNE(n_components = 2, metric = 'precomputed')
         tsne1dfunc = skmanifold.TSNE(n_components = 1, metric = 'precomputed')
-        kernel = 1 - (dist / dist.max())
+        umapfunc = umap.UMAP(metric = "precomputed")
+        
+        #kernel = 1 - (dist / dist.max())
         kernel = np.exp(-dist**2 / dist.max()**2)
         pcs = pcafunc.fit_transform(kernel)
         tsne = tsnefunc.fit_transform(dist)
         tsne1d = tsne1dfunc.fit_transform(dist)
-        
+        umapin = skpre.StandardScaler().fit_transform(dist)
+        umapout = umapfunc.fit_transform(umapin)
         
         plot.scatter(pcs[:,0], pcs[:,1], s=1)
         plot.savefig(self.name() + "-pca-plot.png")
         plot.clf()
         plot.scatter(tsne[:,0], tsne[:,1], s=1)
         plot.savefig(self.name() + "-tsne-plot.png")
-        
+        plot.clf()
+        plot.scatter(umapout[:,0], umapout[:,1], s=1)
+        plot.savefig(self.name() + "-umap-plot.png")
         
         
         pcstxt = np.concatenate((np.array(ids).reshape(-1,1), pcs.astype(str)), axis=1)

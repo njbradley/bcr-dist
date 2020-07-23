@@ -4,6 +4,7 @@
 #include "fileio.h"
 #include "cell.h"
 #include "table.h"
+#include "data.h"
 
 void load_bd_data(string path_heavy, string path_light, vector<bcell_double>& cells) {
 	itablestream itable_heavy(path_heavy);
@@ -47,6 +48,44 @@ void load_bd_data(string path, vector<bcell_single>& cells) {
 	}
 	cout << "sucessfully loaded " << cells.size() << " single stranded cells from file " << path << endl;
 }
+
+
+void load_10x_data(string path, vector<bcell_double>& cells) {
+	
+}
+
+
+void load_dekosky_data(string path, vector<bcell_double>& cells) {
+	itablestream itable(path);
+	tablerow row(&itable);
+	int id = 0;
+	while (!row.eof) {
+		char heavy_light[] = {'H','L'};
+		string aaseqs[2];
+		int i = 0;
+		for (char hl : heavy_light) {
+			string nucseq = row.get(hl + string("3 Junction"));
+			for (int j = 0; j < nucseq.length(); j += 3) {
+				codon c {toupper(nucseq[j]), toupper(nucseq[j+1]), toupper(nucseq[j+2])};
+				char aa = nuc_to_aa[c];
+				aaseqs[i].push_back(aa);
+			}
+			i++;
+		}
+		string vhgene = row.get("VH Gene");
+		string vlgene = row.get("VL Gene");
+		int reads = atoi(row.get("Read Count").c_str());
+		if (reads > 2) {
+			cells.emplace_back(std::to_string(id), bcell_chain(vhgene, aaseqs[0]), bcell_chain(vlgene, aaseqs[1]));
+		}
+		row = tablerow(&itable);
+		id ++;
+	}
+	cout << "sucessfully loaded " << cells.size() << " cells from " << path << endl;
+}
+			
+
+
 
 void save_dist_matrix(string path, vector<bcell_double>& cells) {
 	vector<string> ids {"cell-id"};

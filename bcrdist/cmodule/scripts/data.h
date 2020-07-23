@@ -10,10 +10,27 @@ struct pair_hash {
 	}
 };
 
+struct codon {
+	char x;
+	char y;
+	char z;
+	friend bool operator == (const codon& a, const codon& b) {
+		return a.x == b.x and a.y == b.y and a.z == b.z;
+	}
+	struct hash {
+		size_t operator () (const codon& c) const {
+			std::hash<char> char_hash;
+			return char_hash(c.x) ^ char_hash(c.y) ^ char_hash(c.z);
+		}
+	};
+};
+
+
 extern unordered_map<string,pair<string,string> > vgenes_to_cdrs;
 extern unordered_map<string,string> vgenes_to_full_cdr;
 extern unordered_map<pair<char,char>,double,pair_hash> blosum_distances;
 extern vector<char> amino_acids;
+extern unordered_map<codon,char,codon::hash> nuc_to_aa;
 
 namespace dist_params {
 	extern int gap_penalty;

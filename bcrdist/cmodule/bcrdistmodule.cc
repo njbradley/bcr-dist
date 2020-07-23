@@ -82,6 +82,22 @@ static int py_bcell_vector_type_init(py_bcell_vector *self, PyObject *args) {
   return 0;
 }
 
+static PyObject* py_bcell_vector_load_dekosky_data(py_bcell_vector *self, PyObject *args) {
+  const char* path;
+  
+  if (!PyArg_ParseTuple(args, "s", &path)) {
+    return nullptr;
+  }
+  
+  self->num_strands = 2;
+  if (self->name == "") {
+    self->name = path;
+  }
+  load_dekosky_data(path, self->double_cells);
+  
+  Py_RETURN_NONE;
+}
+
 static PyObject* py_bcell_vector_load_bd_data(py_bcell_vector *self, PyObject *args) {
     const char* heavy;
     const char* light = nullptr;
@@ -296,6 +312,8 @@ static PyMethodDef py_bcell_vector_methods[] = {
      "returns a string summary of the cell array"},
     {"load", (PyCFunction) py_bcell_vector_load, METH_VARARGS,
      "returns a string summary of the cell array"},
+    {"load_dekosky_data", (PyCFunction) py_bcell_vector_load_dekosky_data, METH_VARARGS,
+     "loads dekosky data" },
     {NULL}  /* Sentinel */
 };
 

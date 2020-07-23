@@ -21,7 +21,11 @@ void tablerow::add(string header, int value) {
 }
 
 void tablerow::add(string header, double value) {
-	items[header] = to_string(value);
+	if (int(value) == value) {
+		items[header] = to_string(int(value));
+	} else {
+		items[header] = to_string(int(value));
+	}
 }
 
 string tablerow::get(string header) {
