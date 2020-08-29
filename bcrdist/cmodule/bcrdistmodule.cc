@@ -8,23 +8,23 @@
 #include "scripts/fileio.h"
 
 
-vector<bcell_double> cells;
+vector<dsbcell> cells;
 
 
 
 // typedef struct {
 //     PyObject_HEAD
-//     bcell_double* cell;
-// } py_bcell_double;
+//     dsbcell* cell;
+// } py_dsbcell;
 //
-// static void py_bcell_double_dealloc(py_bcell_double *self) {
+// static void py_dsbcell_dealloc(py_dsbcell *self) {
 //   delete self->cell;
 //   Py_TYPE(self)->tp_free((PyObject *) self);
 // }
 
-// static PyObject * py_bcell_double_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
-//   py_bcell_double *self;
-//   self = (py_bcell_double *) type->tp_alloc(type, 0);
+// static PyObject * py_dsbcell_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
+//   py_dsbcell *self;
+//   self = (py_dsbcell *) type->tp_alloc(type, 0);
 //   if (self != nullptr) {
 //     const char* id;
 //     const char* cdr1;
@@ -32,9 +32,9 @@ vector<bcell_double> cells;
 //     const char* cdr3;
 //     const char* vgene;
 //     if (PyArg_ParseTuple(args, "sss", &id, &vgene, &cdr3)) {
-//       self->cell = new bcell_double(id, vgene, cdr3);
+//       self->cell = new dsbcell(id, vgene, cdr3);
 //     } else if (PyArg_ParseTuple(args, "ssss", &id, &cdr1, &cdr2, &cdr3)) {
-//       self->cell = new bcell_double(id, cdr1, cdr2, cdr3);
+//       self->cell = new dsbcell(id, cdr1, cdr2, cdr3);
 //     } else {
 //       Py_DECREF(self);
 //       return nullptr;
@@ -43,12 +43,12 @@ vector<bcell_double> cells;
 //   return (PyObject *) self;
 // }
 //
-// static PyTypeObject py_bcell_double_type = {
+// static PyTypeObject py_dsbcell_type = {
 //   PyVarObject_HEAD_INIT(NULL, 0)
 //   .tp_name = "cbcrdist.dsbcell",
-//   .tp_basicsize = sizeof(py_bcell_double),
+//   .tp_basicsize = sizeof(py_dsbcell),
 //   .tp_itemsize = 0,
-//   .tp_dealloc = (destructor) py_bcell_double_dealloc,
+//   .tp_dealloc = (destructor) py_dsbcell_dealloc,
 //   .tp_flags = Py_TPFLAGS_DEFAULT,
 //   .tp_doc = "Custom objects",
 //   .tp_new = PyType_GenericNew,
@@ -60,14 +60,58 @@ vector<bcell_double> cells;
 typedef struct {
   PyObject_HEAD
   int num_strands;
-  vector<bcell_double> double_cells;
-  vector<bcell_single> single_cells;
+  vector<dsbcell> double_cells;
+  vector<ssbcell> single_cells;
   string name;
   string dist_file;
 } py_bcell_vector;
 
 static void py_bcell_vector_dealloc(py_bcell_vector *self) {
   Py_TYPE(self)->tp_free((PyObject *) self);
+}
+
+static PyObject* py_bcell_vector_load(py_bcell_vector* self, PyObject* args) {
+  // const char* filename;
+  // if (!PyArg_ParseTuple(args, "s", &filename)) {
+  //   return nullptr;
+  // }
+  
+  ifstream ifile(self->name + ".bcrsavefile.tsv");
+  string line;
+  getline(ifile, line, ':');
+  ifile >> line;
+  if (self->name == "") {
+    self->name = line;
+  }
+  getline(ifile, line, ':');
+  ifile >> line;
+  if (self->dist_file == "") {
+    self->dist_file = line;
+  }
+  
+  getline(ifile, line, ':');
+  ifile >> self->num_strands;
+  
+  getline(ifile, line);
+  getline(ifile, line);
+  
+  if (self->num_strands == 1) {
+    getline(ifile, line);
+    while (!ifile.eof()) {
+      stringstream ss(line);
+      self->single_cells.emplace_back(ss);
+      getline(ifile, line);
+    }
+  } else if (self->num_strands == 2) {
+    getline(ifile, line);
+    while (!ifile.eof()) {
+      stringstream ss(line);
+      self->double_cells.emplace_back(ss);
+      getline(ifile, line);
+    }
+  }
+  
+  Py_RETURN_NONE;
 }
 
 static int py_bcell_vector_type_init(py_bcell_vector *self, PyObject *args) {
@@ -78,6 +122,13 @@ static int py_bcell_vector_type_init(py_bcell_vector *self, PyObject *args) {
   }
   if (newname != nullptr) {
     self->name = newname;
+    
+    ifstream ifile(self->name + ".bcrsavefile.tsv");
+    if (ifile.good()) {
+      PyObject* newargs = PyTuple_New(0);
+      py_bcell_vector_load(self, newargs);
+      Py_DECREF(newargs);
+    }
   }
   return 0;
 }
@@ -136,43 +187,20 @@ static PyObject* py_bcell_vector_load_bd_data(py_bcell_vector *self, PyObject *a
     Py_RETURN_NONE;
 }
 
-static PyObject* py_bcell_vector_load(py_bcell_vector* self, PyObject* args) {
-  const char* filename;
-  if (!PyArg_ParseTuple(args, "s", &filename)) {
-    return nullptr;
-  }
-  
-  ifstream ifile(filename);
-  string line;
-  getline(ifile, line, ':');
-  ifile >> line;
-  if (self->name == "") {
-    self->name = line;
-  }
-  
-  getline(ifile, line, ':');
-  ifile >> self->num_strands;
-  
-  getline(ifile, line);
-  getline(ifile, line);
-  
-  if (self->num_strands == 1) {
-    getline(ifile, line);
-    while (!ifile.eof()) {
-      stringstream ss(line);
-      self->single_cells.emplace_back(ss);
-      getline(ifile, line);
+static PyObject* py_bcell_vector_load_10x_data(py_bcell_vector *self, PyObject *args) {
+    const char* filename;
+    if (!PyArg_ParseTuple(args, "s", &filename)) {
+        return NULL;
     }
-  } else if (self->num_strands == 2) {
-    getline(ifile, line);
-    while (!ifile.eof()) {
-      stringstream ss(line);
-      self->double_cells.emplace_back(ss);
-      getline(ifile, line);
+    
+    if (self->name == "") {
+      self->name = filename;
     }
-  }
-  
-  Py_RETURN_NONE;
+    
+    self->num_strands = 2;
+    load_10x_data(filename, self->double_cells);
+    
+    Py_RETURN_NONE;
 }
 
 static PyObject* py_bcell_vector_generate_dist_matrix(py_bcell_vector *self, PyObject *args) {
@@ -186,13 +214,13 @@ static PyObject* py_bcell_vector_generate_dist_matrix(py_bcell_vector *self, PyO
     }
     
     if (self->dist_file == "") {
-      self->dist_file = self->name + "_dist.csv";
+      self->dist_file = ".bcrdistmatrix.tsv";
     }
     
     if (self->num_strands == 2) {
-      save_dist_matrix(self->dist_file, self->double_cells);
+      save_dist_matrix(self->name + self->dist_file, self->double_cells);
     } else if (self->num_strands == 1) {
-      save_dist_matrix(self->dist_file, self->single_cells);
+      save_dist_matrix(self->name + self->dist_file, self->single_cells);
     }
     
     Py_RETURN_NONE;
@@ -205,7 +233,7 @@ static PyObject* py_bcell_vector_get_dist_matrix(py_bcell_vector* self, PyObject
     Py_DECREF(newargs);
   }
   
-  itablestream itable(self->dist_file);
+  itablestream itable(self->name + self->dist_file);
   int num_cells = itable.headers.size()-1;
   PyObject* cell_ids = PyList_New(num_cells);
   for (int i = 0; i < itable.headers.size()-1; i ++) {
@@ -271,24 +299,25 @@ static PyObject* py_bcell_vector_repr(py_bcell_vector* self) {
 }
 
 static PyObject* py_bcell_vector_save(py_bcell_vector* self, PyObject* args) {
-  const char* filename;
+  // const char* filename;
+  //
+  // if (!PyArg_ParseTuple(args, "s", &filename)) {
+  //   return nullptr;
+  // }
   
-  if (!PyArg_ParseTuple(args, "s", &filename)) {
-    return nullptr;
-  }
-  
-  ofstream ofile(filename);
+  ofstream ofile(self->name + ".bcrsavefile.tsv");
   ofile << "# name:" << self->name << endl;
+  ofile << "# dist_file:" << self->dist_file << endl;
   ofile << "# num_strands:" << self->num_strands << endl;
   if (self->num_strands == 1) {
     ofile << "id\tcdr1\tcdr2\tcdr3" << endl;
-    for (bcell_single& cell : self->single_cells) {
+    for (ssbcell& cell : self->single_cells) {
       cell.to_file(ofile);
       ofile << endl;
     }
   } else if (self->num_strands == 2) {
     ofile << "id\thcdr1\thcdr2\thcdr3\tlcdr1\tlcdr2\tlcdr3" << endl;
-    for (bcell_double& cell : self->double_cells) {
+    for (dsbcell& cell : self->double_cells) {
       cell.to_file(ofile);
       ofile << endl;
     }
@@ -300,19 +329,21 @@ static PyObject* py_bcell_vector_save(py_bcell_vector* self, PyObject* args) {
 static PyMethodDef py_bcell_vector_methods[] = {
     {"generate_dist_matrix", (PyCFunction) py_bcell_vector_generate_dist_matrix, METH_VARARGS,
      "calculates the distance matrix and writes it to a file"},
-    {"load_bd_data", (PyCFunction) py_bcell_vector_load_bd_data, METH_VARARGS,
+    {"loadBD", (PyCFunction) py_bcell_vector_load_bd_data, METH_VARARGS,
      "loads data from two bd files"},
-    {"dist_matrix", (PyCFunction) py_bcell_vector_get_dist_matrix, METH_NOARGS,
+    {"load10x", (PyCFunction) py_bcell_vector_load_10x_data, METH_VARARGS,
+     "loads data from one 10x files"},
+    {"distmatrix", (PyCFunction) py_bcell_vector_get_dist_matrix, METH_NOARGS,
      "returns a numpy array of the distance matrix as well as all of the cell ids"},
     {"name", (PyCFunction) py_bcell_vector_name, METH_NOARGS,
      "returns the name"},
     {"summary", (PyCFunction) py_bcell_vector_summary, METH_NOARGS,
      "returns a string summary of the cell array"},
-    {"save", (PyCFunction) py_bcell_vector_save, METH_VARARGS,
+    {"save", (PyCFunction) py_bcell_vector_save, METH_NOARGS,
      "returns a string summary of the cell array"},
-    {"load", (PyCFunction) py_bcell_vector_load, METH_VARARGS,
+    {"load", (PyCFunction) py_bcell_vector_load, METH_NOARGS,
      "returns a string summary of the cell array"},
-    {"load_dekosky_data", (PyCFunction) py_bcell_vector_load_dekosky_data, METH_VARARGS,
+    {"loaddekosky", (PyCFunction) py_bcell_vector_load_dekosky_data, METH_VARARGS,
      "loads dekosky data" },
     {NULL}  /* Sentinel */
 };

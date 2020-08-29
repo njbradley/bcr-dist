@@ -3,12 +3,19 @@
 
 #include "classes.h"
 
-
+struct bcell {
+	string id;
+	bcell(string newid);
+	bcell(istream& ifile);
+	virtual double distance(bcell* other) = 0;
+	virtual void to_file(ostream& ofile);
+};
 
 struct bcell_chain {
 	string cdr1;
 	string cdr2;
 	string cdr3;
+	bool valid;
 	bcell_chain(string v_gene, string newcdr3);
 	bcell_chain(string newcdr1, string newcdr2, string newcdr3);
 	bcell_chain(istream& ifile);
@@ -19,22 +26,20 @@ struct bcell_chain {
 	static void align_aa(string& longer, string& shorter);
 };
 
-struct bcell_single {
-	string id;
+struct ssbcell: bcell {
 	bcell_chain chain;
-	double distance(bcell_single* other);
-	bcell_single(string newid, bcell_chain newchain);
-	bcell_single(istream& ifile);
+	double distance(bcell* other);
+	ssbcell(string newid, bcell_chain newchain);
+	ssbcell(istream& ifile);
 	void to_file(ostream& ofile);
 };
 
-struct bcell_double {
-	string id;
+struct dsbcell: bcell {
 	bcell_chain heavy;
 	bcell_chain light;
-	double distance(bcell_double* other);
-	bcell_double(string newid, bcell_chain newheavy, bcell_chain newlight);
-	bcell_double(istream& ifile);
+	double distance(bcell* other);
+	dsbcell(string newid, bcell_chain newheavy, bcell_chain newlight);
+	dsbcell(istream& ifile);
 	void to_file(ostream& ofile);
 };
 

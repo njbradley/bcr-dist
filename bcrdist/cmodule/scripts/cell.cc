@@ -5,7 +5,19 @@
 #include "data.h"
 
 
-bcell_chain::bcell_chain(string v_gene, string newcdr3): cdr3(newcdr3) {
+bcell::bcell(string newid): id(newid) {
+	
+}
+
+bcell::bcell(istream& ifile) {
+	ifile >> id;
+}
+
+void bcell::to_file(ostream& ofile) {
+	ofile << id << '\t';
+}
+
+bcell_chain::bcell_chain(string v_gene, string newcdr3): cdr3(newcdr3), valid(true) {
 	//cout << newid << ' ' << v_gene << ' ' << newcdr3 << endl;
 	stringstream vgeness(v_gene);
 	while (!vgeness.eof() and vgenes_to_cdrs.find(v_gene) == vgenes_to_cdrs.end()) {
@@ -14,15 +26,35 @@ bcell_chain::bcell_chain(string v_gene, string newcdr3): cdr3(newcdr3) {
 			v_gene += "*01";
 		}
 	}
-	//cout << v_gene << endl;
-	pair<string,string> cdrs = vgenes_to_cdrs[v_gene];
-	cdr1 = cdrs.first;
-	cdr2 = cdrs.second;
-	//cout << cdr1 << ' ' << cdr2 << endl;
+	if (vgenes_to_cdrs.find(v_gene) != vgenes_to_cdrs.end()) {
+		pair<string,string> cdrs = vgenes_to_cdrs.at(v_gene);
+		cdr1 = cdrs.first;
+		cdr2 = cdrs.second;
+	} else {
+		valid = false;
+	}
+	
+	if (cdr3 == "") {
+		valid = false;
+	} else {
+		for (char c : cdr3) {
+			bool found = false;
+			for (char aa : amino_acids) {
+				if (aa == c) {
+					found = true;
+					break;
+				}
+			}
+			if (!found) {
+				valid = false;
+				break;
+			}
+		}
+	}
 }
 
 bcell_chain::bcell_chain(string newcdr1, string newcdr2, string newcdr3): cdr1(newcdr1), cdr2(newcdr2), cdr3(newcdr3) {
-	
+	valid = cdr1 != "" and cdr2 != "" and cdr3 != "";
 }
 
 bcell_chain::bcell_chain(istream& ifile) {
@@ -140,51 +172,52 @@ double bcell_chain::distance(bcell_chain* other) {
 }
 
 
-
-
-string get_id(istream& ifile) {
-	string newid;
-	ifile >> newid;
-	return newid;
-}
-
-
-bcell_single::bcell_single(string newid, bcell_chain newchain): id(newid), chain(newchain) {
+ssbcell::ssbcell(string newid, bcell_chain newchain): bcell(newid), chain(newchain) {
 	
 }
 
-bcell_single::bcell_single(istream& ifile): id(get_id(ifile)), chain(ifile) {
+ssbcell::ssbcell(istream& ifile): bcell(ifile), chain(ifile) {
 	
 }
 
-void bcell_single::to_file(ostream& ofile) {
-	ofile << id << '\t';
+void ssbcell::to_file(ostream& ofile) {
+	bcell::to_file(ofile);
 	chain.to_file(ofile);
 }
 
-double bcell_single::distance(bcell_single* other) {
-	return chain.distance(&other->chain);
+double ssbcell::distance(bcell* other) {
+	ssbcell* ssother = dynamic_cast<ssbcell*>(other);
+	if (ssother != nullptr) {
+		return chain.distance(&ssother->chain);
+	} else {
+		return 0;
+	}
 }
 
 
 
 
-bcell_double::bcell_double(string newid, bcell_chain newheavy, bcell_chain newlight): id(newid), heavy(newheavy), light(newlight) {
+dsbcell::dsbcell(string newid, bcell_chain newheavy, bcell_chain newlight): bcell(newid), heavy(newheavy), light(newlight) {
 	
 }
 
-bcell_double::bcell_double(istream& ifile): id(get_id(ifile)), heavy(ifile), light(ifile) {
+dsbcell::dsbcell(istream& ifile): bcell(ifile), heavy(ifile), light(ifile) {
 	
 }
 
-void bcell_double::to_file(ostream& ofile) {
-	ofile << id << '\t';
+void dsbcell::to_file(ostream& ofile) {
+	bcell::to_file(ofile);
 	heavy.to_file(ofile);
 	light.to_file(ofile);
 }
 
-double bcell_double::distance(bcell_double* other) {
-	return heavy.distance(&other->heavy) + light.distance(&other->light);
+double dsbcell::distance(bcell* other) {
+	dsbcell* dsother = dynamic_cast<dsbcell*>(other);
+	if (dsother != nullptr) {
+		return heavy.distance(&dsother->heavy) + light.distance(&dsother->light);
+	} else {
+		return 0;
+	}
 }
 
 #endif

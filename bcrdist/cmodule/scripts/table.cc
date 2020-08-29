@@ -83,7 +83,7 @@ void itablestream::readline(tablerow* row) {
 
 otablestream::otablestream(string path, vector<string>* newheaders): ofile(path), headers(*newheaders), delim(get_delim(path)) {
 	for (string head : headers) {
-		ofile << head << ',';
+		ofile << head << delim;
 	}
 	ofile << endl;
 }

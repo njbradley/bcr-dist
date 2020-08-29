@@ -6,7 +6,7 @@
 #include "table.h"
 #include "data.h"
 
-void load_bd_data(string path_heavy, string path_light, vector<bcell_double>& cells) {
+void load_bd_data(string path_heavy, string path_light, vector<dsbcell>& cells) {
 	itablestream itable_heavy(path_heavy);
 	itablestream itable_light(path_light);
 	tablerow hrow(&itable_heavy);
@@ -36,7 +36,7 @@ void load_bd_data(string path_heavy, string path_light, vector<bcell_double>& ce
 	cout << "sucessfully loaded " << cells.size() << " double stranded cells from files " << path_heavy << ' ' << path_light << endl;
 }
 
-void load_bd_data(string path, vector<bcell_single>& cells) {
+void load_bd_data(string path, vector<ssbcell>& cells) {
 	itablestream itable(path);
 	tablerow row(&itable);
 	
@@ -50,12 +50,48 @@ void load_bd_data(string path, vector<bcell_single>& cells) {
 }
 
 
-void load_10x_data(string path, vector<bcell_double>& cells) {
+void load_10x_data(string path, vector<dsbcell>& cells) {
+	itablestream itable(path);
+	tablerow row(&itable);
+	while (!row.eof) {
+		string id = row.get("barcode");
+		int match = -1;
+		for (int i = 0; i < cells.size(); i ++) {
+			if (cells[i].id == id) {
+				match = i;
+			}
+		}
+		string chain = row.get("chain");
+		if (match == -1) {
+			if (chain == "IGL" or chain == "IGK") {
+				cells.emplace_back(id, bcell_chain("","",""), bcell_chain(row.get("v_gene"), row.get("cdr3")));
+			} else if (chain == "IGH") {
+				cells.emplace_back(id, bcell_chain(row.get("v_gene"), row.get("cdr3")), bcell_chain("","",""));
+			}
+		} else {
+			if (chain == "IGL" or chain == "IGK") {
+				if (!cells[match].light.valid) {
+					cells[match].light = bcell_chain(row.get("v_gene"), row.get("cdr3"));
+				}
+			} else if (chain == "IGH") {
+				if (!cells[match].heavy.valid) {
+					cells[match].heavy = bcell_chain(row.get("v_gene"), row.get("cdr3"));
+				}
+			}
+		}
+		row = tablerow(&itable);
+	}
 	
+	for (int i = cells.size()-1; i >= 0; i --) {
+		if (!cells[i].heavy.valid or !cells[i].light.valid) {
+			cells.erase(cells.begin() + i);
+		}
+	}
+	cout << "sucessfully loaded in " << cells.size() << " cells from file " << path << endl;
 }
 
 
-void load_dekosky_data(string path, vector<bcell_double>& cells) {
+void load_dekosky_data(string path, vector<dsbcell>& cells) {
 	itablestream itable(path);
 	tablerow row(&itable);
 	int id = 0;
@@ -87,9 +123,9 @@ void load_dekosky_data(string path, vector<bcell_double>& cells) {
 
 
 
-void save_dist_matrix(string path, vector<bcell_double>& cells) {
+void save_dist_matrix(string path, vector<dsbcell>& cells) {
 	vector<string> ids {"cell-id"};
-	for (bcell_double& cell : cells) {
+	for (dsbcell& cell : cells) {
 		ids.push_back(cell.id);
 	}
 	otablestream otable(path, &ids);
@@ -106,9 +142,9 @@ void save_dist_matrix(string path, vector<bcell_double>& cells) {
 }
 
 
-void save_dist_matrix(string path, vector<bcell_single>& cells) {
+void save_dist_matrix(string path, vector<ssbcell>& cells) {
 	vector<string> ids {"cell-id"};
-	for (bcell_single& cell : cells) {
+	for (ssbcell& cell : cells) {
 		ids.push_back(cell.id);
 	}
 	otablestream otable(path, &ids);

@@ -14,9 +14,12 @@ class dist_solver { public:
 
 class cluster_solver { public:
 	int max_cells;
+	vector<bcell*> cells;
+	vector<bcell*> clusters;
+	unordered_map<string,vector<string> > mapping;
 	
-	cluster_solver(int newmax_cells);
-	void fit_transform(vector<bcell_double>& cells, vector<bcell_double>& outcells, vector<string,vector<string> >& id_mapping);
+	cluster_solver(int newmax_cells, vector<bcell*> cells);
+	void fit_transform();
 };
 
 #endif

@@ -26,7 +26,7 @@ struct itablestream;
 struct tablerow;
 struct otablestream;
 struct bcell_chain;
-struct bcell_double;
-struct bcell_single;
+struct dsbcell;
+struct ssbcell;
 
 #endif

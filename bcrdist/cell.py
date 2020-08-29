@@ -4,7 +4,6 @@ import sklearn.preprocessing as skpre
 from . import cbcrdist
 import matplotlib.pyplot as plot
 import numpy as np
-from . import umap
 import sys
 import os
 
@@ -18,32 +17,79 @@ class array(cbcrdist.bcellarray):
     libraries and functions
     '''
     
+    def tsneplot(self, path = None):
+        if (path == None):
+            path = self.name() + "-tsneplot.png"
+        
+        tsnefunc = skmanifold.TSNE(n_components = 2, metric = 'precomputed')
+        
+        dist, ids = self.distmatrix()
+        
+        tsne = tsnefunc.fit_transform(dist)
+        
+        plot.clf()
+        plot.title(self.name() + " tSNE")
+        plot.scatter(tsne[:,0], tsne[:,1], s=1)
+        plot.savefig(path)
+    
+    def savePCs(self, path = None):
+        if (path == None):
+            path = self.name() + "-pcs.csv"
+        dist, ids = self.distmatrix()
+        pcafunc = skdecomp.KernelPCA(75, kernel='precomputed')
+        kernel = np.exp(-dist**2 / dist.max()**2)
+        pcs = pcafunc.fit_transform(kernel)
+        
+        pcstxt = np.concatenate((np.array(ids).reshape(-1,1), pcs.astype(str)), axis=1)
+        np.savetxt(oath, pcstxt, delimiter=',', fmt='%s', comments='', header = "cell_index," + ','.join(["pc" + str(i) for i in range(75)]))
+    
+    def umapplot(self, path=None):
+        if (path == None):
+            path = self.name() + "-umap-plot.png"
+        
+        import umap
+        dist, ids = self.distmatrix()
+        
+        umapfunc = umap.UMAP(metric = "precomputed")
+        umapout = umapfunc.fit_transform(dist)
+        
+        plot.clf()
+        plot.title(self.name() + " UMAP")
+        plot.scatter(umapout[:,0], umapout[:,1], s=1)
+        plot.savefig(path)
     
     def generate_kpca_data(self):
-        dist, ids = self.dist_matrix()
+        dist, ids = self.distmatrix()
         
         pcafunc = skdecomp.KernelPCA(75, kernel='precomputed')
         tsnefunc = skmanifold.TSNE(n_components = 2, metric = 'precomputed')
         tsne1dfunc = skmanifold.TSNE(n_components = 1, metric = 'precomputed')
-        umapfunc = umap.UMAP(metric = "precomputed")
         
         #kernel = 1 - (dist / dist.max())
         kernel = np.exp(-dist**2 / dist.max()**2)
         pcs = pcafunc.fit_transform(kernel)
         tsne = tsnefunc.fit_transform(dist)
         tsne1d = tsne1dfunc.fit_transform(dist)
-        umapin = skpre.StandardScaler().fit_transform(dist)
-        umapout = umapfunc.fit_transform(umapin)
+        #umapin = skpre.StandardScaler().fit_transform(dist)
+        
         
         plot.scatter(pcs[:,0], pcs[:,1], s=1)
         plot.savefig(self.name() + "-pca-plot.png")
         plot.clf()
         plot.scatter(tsne[:,0], tsne[:,1], s=1)
         plot.savefig(self.name() + "-tsne-plot.png")
-        plot.clf()
-        plot.scatter(umapout[:,0], umapout[:,1], s=1)
-        plot.savefig(self.name() + "-umap-plot.png")
         
+        # umapfunc = umap.UMAP()
+        # umapout = umapfunc.fit_transform(skpre.StandardScaler().fit_transform(pcs))
+        # tsnefunc = skmanifold.TSNE(n_components = 2)
+        # tsne = tsnefunc.fit_transform(dist)
+        #
+        # plot.clf()
+        # plot.scatter(umapout[:,0], umapout[:,1], s=1)
+        # plot.savefig(self.name() + "-umap-plot-pcs.png")
+        # plot.clf()
+        # plot.scatter(tsne[:,0], tsne[:,1], s=1)
+        # plot.savefig(self.name() + "-tsne-plot-pcs.png")
         
         pcstxt = np.concatenate((np.array(ids).reshape(-1,1), pcs.astype(str)), axis=1)
         np.savetxt(self.name() + "-pcs.csv", pcstxt, delimiter=',', fmt='%s', comments='', header = "cell_index," + ','.join(["pc" + str(i) for i in range(75)]))
@@ -61,3 +107,19 @@ class array(cbcrdist.bcellarray):
         message += self.summary()
         message += ">"
         return message
+
+
+def load10x(path):
+    arr = array()
+    arr.load10x(path)
+    return arr
+
+def loadBD(*args):
+    arr = array()
+    arr.loadBD(*args)
+    return arr
+
+def loaddekosky(path):
+    arr = array()
+    arr.loaddekosky(path)
+    return arr
