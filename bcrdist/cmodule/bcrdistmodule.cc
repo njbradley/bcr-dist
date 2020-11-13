@@ -11,63 +11,32 @@
 vector<dsbcell> cells;
 
 
-
-// typedef struct {
-//     PyObject_HEAD
-//     dsbcell* cell;
-// } py_dsbcell;
-//
-// static void py_dsbcell_dealloc(py_dsbcell *self) {
-//   delete self->cell;
-//   Py_TYPE(self)->tp_free((PyObject *) self);
-// }
-
-// static PyObject * py_dsbcell_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
-//   py_dsbcell *self;
-//   self = (py_dsbcell *) type->tp_alloc(type, 0);
-//   if (self != nullptr) {
-//     const char* id;
-//     const char* cdr1;
-//     const char* cdr2;
-//     const char* cdr3;
-//     const char* vgene;
-//     if (PyArg_ParseTuple(args, "sss", &id, &vgene, &cdr3)) {
-//       self->cell = new dsbcell(id, vgene, cdr3);
-//     } else if (PyArg_ParseTuple(args, "ssss", &id, &cdr1, &cdr2, &cdr3)) {
-//       self->cell = new dsbcell(id, cdr1, cdr2, cdr3);
-//     } else {
-//       Py_DECREF(self);
-//       return nullptr;
-//     }
-//   }
-//   return (PyObject *) self;
-// }
-//
-// static PyTypeObject py_dsbcell_type = {
-//   PyVarObject_HEAD_INIT(NULL, 0)
-//   .tp_name = "cbcrdist.dsbcell",
-//   .tp_basicsize = sizeof(py_dsbcell),
-//   .tp_itemsize = 0,
-//   .tp_dealloc = (destructor) py_dsbcell_dealloc,
-//   .tp_flags = Py_TPFLAGS_DEFAULT,
-//   .tp_doc = "Custom objects",
-//   .tp_new = PyType_GenericNew,
-// };
-
-
-
-
 typedef struct {
   PyObject_HEAD
   int num_strands;
   vector<dsbcell> double_cells;
   vector<ssbcell> single_cells;
+  vector<bcell*> ref_cells;
   string name;
   string dist_file;
 } py_bcell_vector;
 
 static void py_bcell_vector_dealloc(py_bcell_vector *self) {
   Py_TYPE(self)->tp_free((PyObject *) self);
+}
+
+static PyObject* py_bcell_vector_update_ref(py_bcell_vector *self) {
+  self->ref_cells.clear();
+  if (self->num_strands == 1) {
+    for (ssbcell& cell : self->single_cells) {
+      self->ref_cells.push_back(&cell);
+    }
+  } else if (self->num_strands == 2) {
+    for (dsbcell& cell : self->double_cells) {
+      self->ref_cells.push_back(&cell);
+    }
+  }
+  Py_RETURN_NONE;
 }
 
 static PyObject* py_bcell_vector_load(py_bcell_vector* self, PyObject* args) {
@@ -111,6 +80,7 @@ static PyObject* py_bcell_vector_load(py_bcell_vector* self, PyObject* args) {
     }
   }
   
+  py_bcell_vector_update_ref(self);
   Py_RETURN_NONE;
 }
 
@@ -146,6 +116,7 @@ static PyObject* py_bcell_vector_load_dekosky_data(py_bcell_vector *self, PyObje
   }
   load_dekosky_data(path, self->double_cells);
   
+  py_bcell_vector_update_ref(self);
   Py_RETURN_NONE;
 }
 
@@ -176,14 +147,15 @@ static PyObject* py_bcell_vector_load_bd_data(py_bcell_vector *self, PyObject *a
       
       load_bd_data(heavy_str, light_str, self->double_cells);
     } else {
-      self->num_strands = 1;
+      self->num_strands = 2;
       if (self->name == "") {
         self->name = heavy_str;
       }
       
-      load_bd_data(heavy_str, self->single_cells);
+      load_bd_data(heavy_str, self->double_cells);
     }
     
+    py_bcell_vector_update_ref(self);
     Py_RETURN_NONE;
 }
 
@@ -200,8 +172,47 @@ static PyObject* py_bcell_vector_load_10x_data(py_bcell_vector *self, PyObject *
     self->num_strands = 2;
     load_10x_data(filename, self->double_cells);
     
+    py_bcell_vector_update_ref(self);
     Py_RETURN_NONE;
 }
+
+static PyObject* py_bcell_vector_tolist(py_bcell_vector *self) {
+  if (self->num_strands == 1) {
+    PyObject* list = PyList_New(self->single_cells.size());
+    int i = 0;
+    for (ssbcell& cell : self->single_cells) {
+      PyObject* cell_list = PyList_New(5);
+      string vals[] = {cell.id, cell.clonotype, cell.chain.cdr1, cell.chain.cdr2, cell.chain.cdr3 };
+      int j = 0;
+      for (string val : vals) {
+        PyList_SET_ITEM(cell_list, j, PyUnicode_FromString(val.c_str()));
+        j ++;
+      }
+      PyList_SET_ITEM(list, i, cell_list);
+      i++;
+    }
+    return list;
+  } else if (self->num_strands == 2) {
+    PyObject* list = PyList_New(self->double_cells.size());
+    // cout << list<< endl;
+    int i = 0;
+    for (dsbcell& cell : self->double_cells) {
+      // cout << i << endl;
+      // cout << &cell << endl;
+      PyObject* cell_list = Py_BuildValue("ssssssss",
+        cell.id.c_str(), cell.clonotype.c_str(),
+        cell.heavy.cdr1.c_str(), cell.heavy.cdr2.c_str(), cell.heavy.cdr3.c_str(),
+        cell.light.cdr1.c_str(), cell.light.cdr2.c_str(), cell.light.cdr3.c_str()
+      );
+      PyList_SET_ITEM(list, i, cell_list);
+      i++;
+    }
+    return list;
+  } else {
+    return nullptr;
+  }
+}
+      
 
 static PyObject* py_bcell_vector_generate_dist_matrix(py_bcell_vector *self, PyObject *args) {
     const char* new_dist_file = nullptr;
@@ -217,11 +228,7 @@ static PyObject* py_bcell_vector_generate_dist_matrix(py_bcell_vector *self, PyO
       self->dist_file = ".bcrdistmatrix.tsv";
     }
     
-    if (self->num_strands == 2) {
-      save_dist_matrix(self->name + self->dist_file, self->double_cells);
-    } else if (self->num_strands == 1) {
-      save_dist_matrix(self->name + self->dist_file, self->single_cells);
-    }
+    save_dist_matrix(self->name + self->dist_file, self->ref_cells);
     
     Py_RETURN_NONE;
 }
@@ -345,6 +352,8 @@ static PyMethodDef py_bcell_vector_methods[] = {
      "returns a string summary of the cell array"},
     {"loaddekosky", (PyCFunction) py_bcell_vector_load_dekosky_data, METH_VARARGS,
      "loads dekosky data" },
+    {"tolist", (PyCFunction) py_bcell_vector_tolist, METH_NOARGS,
+     "outputs a list of the data"},
     {NULL}  /* Sentinel */
 };
 
@@ -359,7 +368,7 @@ static PyTypeObject py_bcell_vector_type = {
   .tp_doc = "An array of double stranded bcells",
   .tp_methods = py_bcell_vector_methods,
   .tp_init = (initproc)py_bcell_vector_type_init,
-  .tp_new = PyType_GenericNew,
+  .tp_new = PyType_GenericNew
 };
 
 

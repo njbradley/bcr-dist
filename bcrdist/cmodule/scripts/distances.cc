@@ -1,6 +1,8 @@
 #ifndef DISTANCES_CC
 #define DISTANCES_CC
 
+#include <LBFGS.h>
+
 dist_solver::dist_solver(int ncomponents, int numcells): ndims(ncomponents), ncells(numcells) {
 	matrix = new double[ndims*numcells];
 }

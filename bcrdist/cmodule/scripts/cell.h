@@ -5,7 +5,8 @@
 
 struct bcell {
 	string id;
-	bcell(string newid);
+	string clonotype;
+	bcell(string newid, string newclono);
 	bcell(istream& ifile);
 	virtual double distance(bcell* other) = 0;
 	virtual void to_file(ostream& ofile);
@@ -29,7 +30,7 @@ struct bcell_chain {
 struct ssbcell: bcell {
 	bcell_chain chain;
 	double distance(bcell* other);
-	ssbcell(string newid, bcell_chain newchain);
+	ssbcell(string newid, bcell_chain newchain, string newclono = "-");
 	ssbcell(istream& ifile);
 	void to_file(ostream& ofile);
 };
@@ -38,7 +39,7 @@ struct dsbcell: bcell {
 	bcell_chain heavy;
 	bcell_chain light;
 	double distance(bcell* other);
-	dsbcell(string newid, bcell_chain newheavy, bcell_chain newlight);
+	dsbcell(string newid, bcell_chain newheavy, bcell_chain newlight, string newclono = "-");
 	dsbcell(istream& ifile);
 	void to_file(ostream& ofile);
 };

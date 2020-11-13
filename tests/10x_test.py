@@ -8,5 +8,5 @@ infile = sys.argv[1]
 
 arr = bcrdist.cell.load10x(infile);
 arr.savePCs()
-arr.tsneplot()
-arr.umapplot()
+arr.umapplot(colorby = "clonotype")
+#arr.tsneplot(colorby = "clonotype")

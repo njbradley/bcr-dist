@@ -36,17 +36,26 @@ void load_bd_data(string path_heavy, string path_light, vector<dsbcell>& cells) 
 	cout << "sucessfully loaded " << cells.size() << " double stranded cells from files " << path_heavy << ' ' << path_light << endl;
 }
 
-void load_bd_data(string path, vector<ssbcell>& cells) {
+void load_bd_data(string path, vector<dsbcell>& cells) {
 	itablestream itable(path);
 	tablerow row(&itable);
 	
 	while (!row.eof) {
-		if (row.get("AA CDR3") != "[CDR3_not_canonical]") {
-			cells.emplace_back(row.get("Cell Label"), bcell_chain(row.get("V"), row.get("AA CDR3")));
+		bcell_chain heavy(row.get("BCR_Heavy_V_gene_Dominant"), row.get("BCR_Heavy_CDR3_Translation_Dominant"));
+		bcell_chain light(row.get("BCR_Light_V_gene_Dominant"), row.get("BCR_Light_CDR3_Translation_Dominant"));
+		if (heavy.valid and light.valid) {
+			cells.emplace_back(row.get("Cell_Index"), heavy, light);
+		} else {
+			// for (pair<string,string> val : row.items) {
+			// 	cout << val.first << ',' << val.second << ' ';
+			// }
+			//cout << row.get("Cell_Index") << endl;
+			//cout << row.get("BCR_Heavy_V_gene_Dominant") << ' ' << row.get("BCR_Light_V_gene_Dominant") << endl;
+			//cout << row.get("BCR_Heavy_CDR3_Translation_Dominant") << ' ' << row.get("BCR_Light_CDR3_Translation_Dominant") << endl;
 		}
 		row = tablerow(&itable);
 	}
-	cout << "sucessfully loaded " << cells.size() << " single stranded cells from file " << path << endl;
+	cout << "sucessfully loaded " << cells.size() << " double stranded cells from file " << path << endl;
 }
 
 
@@ -64,9 +73,9 @@ void load_10x_data(string path, vector<dsbcell>& cells) {
 		string chain = row.get("chain");
 		if (match == -1) {
 			if (chain == "IGL" or chain == "IGK") {
-				cells.emplace_back(id, bcell_chain("","",""), bcell_chain(row.get("v_gene"), row.get("cdr3")));
+				cells.emplace_back(id, bcell_chain("","",""), bcell_chain(row.get("v_gene"), row.get("cdr3")), row.get("raw_clonotype_id"));
 			} else if (chain == "IGH") {
-				cells.emplace_back(id, bcell_chain(row.get("v_gene"), row.get("cdr3")), bcell_chain("","",""));
+				cells.emplace_back(id, bcell_chain(row.get("v_gene"), row.get("cdr3")), bcell_chain("","",""), row.get("raw_clonotype_id"));
 			}
 		} else {
 			if (chain == "IGL" or chain == "IGK") {
@@ -123,37 +132,18 @@ void load_dekosky_data(string path, vector<dsbcell>& cells) {
 
 
 
-void save_dist_matrix(string path, vector<dsbcell>& cells) {
+void save_dist_matrix(string path, vector<bcell*>& cells) {
 	vector<string> ids {"cell-id"};
-	for (dsbcell& cell : cells) {
-		ids.push_back(cell.id);
+	for (bcell* cell : cells) {
+		ids.push_back(cell->id);
 	}
 	otablestream otable(path, &ids);
 	for (int i = cells.size()-1; i >= 0; i --) {
 		tablerow row;
-		row.add("cell-id", cells[i].id);
+		row.add("cell-id", cells[i]->id);
 		for (int j = 0; j < i; j ++) {
-			double dist = cells[i].distance(&cells[j]);
-			row.add(cells[j].id, dist);
-		}
-		otable.writeline(&row);
-	}
-	cout << "sucessfully saved " << cells.size() << " cells into the distance matrix " << path << endl;
-}
-
-
-void save_dist_matrix(string path, vector<ssbcell>& cells) {
-	vector<string> ids {"cell-id"};
-	for (ssbcell& cell : cells) {
-		ids.push_back(cell.id);
-	}
-	otablestream otable(path, &ids);
-	for (int i = cells.size()-1; i >= 0; i --) {
-		tablerow row;
-		row.add("cell-id", cells[i].id);
-		for (int j = 0; j < i; j ++) {
-			double dist = cells[i].distance(&cells[j]);
-			row.add(cells[j].id, dist);
+			double dist = cells[i]->distance(cells[j]);
+			row.add(cells[j]->id, dist);
 		}
 		otable.writeline(&row);
 	}

@@ -5,16 +5,16 @@
 #include "data.h"
 
 
-bcell::bcell(string newid): id(newid) {
+bcell::bcell(string newid, string newclono): id(newid), clonotype(newclono) {
 	
 }
 
 bcell::bcell(istream& ifile) {
-	ifile >> id;
+	ifile >> id >> clonotype;
 }
 
 void bcell::to_file(ostream& ofile) {
-	ofile << id << '\t';
+	ofile << id << '\t' << clonotype << '\t';
 }
 
 bcell_chain::bcell_chain(string v_gene, string newcdr3): cdr3(newcdr3), valid(true) {
@@ -172,7 +172,7 @@ double bcell_chain::distance(bcell_chain* other) {
 }
 
 
-ssbcell::ssbcell(string newid, bcell_chain newchain): bcell(newid), chain(newchain) {
+ssbcell::ssbcell(string newid, bcell_chain newchain, string newclono): bcell(newid, newclono), chain(newchain) {
 	
 }
 
@@ -197,7 +197,7 @@ double ssbcell::distance(bcell* other) {
 
 
 
-dsbcell::dsbcell(string newid, bcell_chain newheavy, bcell_chain newlight): bcell(newid), heavy(newheavy), light(newlight) {
+dsbcell::dsbcell(string newid, bcell_chain newheavy, bcell_chain newlight, string newclono): bcell(newid, newclono), heavy(newheavy), light(newlight) {
 	
 }
 

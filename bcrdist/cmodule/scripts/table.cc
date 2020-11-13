@@ -54,7 +54,11 @@ itablestream::itablestream(string path): ifile(path), delim(get_delim(path)) {
 		exit(1);
 	}
 	string line_str;
-	getline(ifile, line_str);
+	do {
+		getline(ifile, line_str);
+	} while (!ifile.eof() and (line_str.length() < 0 or line_str[0] == '#'));
+	//cout << line_str << endl;
+	//cout << "-----------------" << endl;
 	stringstream line(line_str);
 	string word;
 	do {
