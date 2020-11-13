@@ -3,7 +3,7 @@
 ## bcrdist.cell.array
 This is the main class that everything in bcrdist is run on. It is an array of bcells, and it can hold either single or paired bcell sequences.
 
-## bcrdist.cell.load10X(string path)
+## bcrdist.cell.load10x(string path)
 This method creates a bcrdist.cell.array object and fills it with the cells in the input path. The input path is expected to be a 10x contig annotations file.
 This method is shorthand for
 ```python
@@ -19,11 +19,11 @@ arr = bcrdist.cell.array()
 arr.loadBD(path)
 ```
 
-## bcrdist.cell.array(string name = None) -> None
+## bcrdist.cell.array([string name]) -> None
 The constructor for bcrdist.cell.array can take a name parameter. This name will be stored and used in other functions. If a name is not specified, it remains uuninitialized until data is loaded.
 When the array is created, it looks to see if a save file exists for the specified name. If it does, that file is loaded.
 
-## bcrdist.cell.array.load10X(string path) -> None
+## bcrdist.cell.array.load10x(string path) -> None
 This method loads bcells from a 10x type data file, and appends the cells onto this cell array.
 
 ## bcrdist.cell.array.loadBD(string heavypath, [string lightpath]) -> None
