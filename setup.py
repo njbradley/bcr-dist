@@ -1,4 +1,5 @@
 import setuptools
+import numpy
 
 cext = setuptools.Extension(
     "bcrdist.cbcrdist",
@@ -11,7 +12,7 @@ cext = setuptools.Extension(
         # 'bcrdist/cmodule/scripts/distances.cc',
     ],
     include_dirs = [
-        '/app/software/Anaconda3/2020.02/lib/python3.7/site-packages/numpy/core/include',
+        numpy.get_include(),
         'bcrdist/cmodule/scripts/packages'
     ]
 )
