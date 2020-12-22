@@ -6,7 +6,7 @@ if (len(sys.argv) < 1):
 
 infile = sys.argv[1]
 
-arr = bcrdist.cell.load10x(infile);
+arr = bcrdist.load10x(infile);
 arr.savePCs()
 arr.umapplot(colorby = "clonotype")
 #arr.tsneplot(colorby = "clonotype")
