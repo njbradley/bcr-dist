@@ -3,7 +3,15 @@
 ## bcrdist.cellarray
 This is the main class that everything in bcrdist is run on. It is an array of bcells, and it can hold either single or paired bcell sequences.
 
-## bcrdist.load10x(string path)
+## bcrdist.cellarray([string name])
+The constructor for bcrdist.cellarray can take a name parameter. This name will be stored and used in other functions. If a name is not specified, it remains uuninitialized until data is loaded.
+When the array is created, it looks to see if a save file exists for the specified name. If it does, that file is loaded.
+
+## bcrdist.cellarray(list data)
+This constructor populates the cell array with a list of data. The data is in the same format as data passed to append.
+
+
+## bcrdist.load10x(string path) -> new cellarray
 This method creates a bcrdist.cellarray object and fills it with the cells in the input path. The input path is expected to be a 10x contig annotations file.
 This method is shorthand for
 ```python
@@ -11,7 +19,7 @@ arr = bcrdist.cellarray()
 arr.load10X(path)
 ```
 
-## bcrdist.loadBD(string heavypath, [string lightpath]) -> None
+## bcrdist.loadBD(string heavypath, [string lightpath]) -> new cellarray
 This method, like load10X, creates a cell array and populates it with the bd data files. BD data has one heavy and one light file, so if the data you are using is paired, you have to put in both filenames
 This method is shorthand for
 ```python
@@ -19,9 +27,13 @@ arr = bcrdist.cellarray()
 arr.loadBD(path)
 ```
 
-## bcrdist.cellarray([string name]) -> None
-The constructor for bcrdist.cellarray can take a name parameter. This name will be stored and used in other functions. If a name is not specified, it remains uuninitialized until data is loaded.
-When the array is created, it looks to see if a save file exists for the specified name. If it does, that file is loaded.
+## bcrdist.cellarray.append(tuple data)
+This method appends a new cell into the dataset. The tuple of data can have two different formats:
+```python
+(cell-name, cell-clonotype, heavy-v-gene, heavy-cdr3, light-v-gene, light-cdr3)
+(cell-name, cell-clonotype, heavy-cdr1, heavy-cdr2, heavy-cdr3, light-cdr1, light-cdr2, light-cdr3)
+```
+Right now this method only works for paired data.
 
 ## bcrdist.cellarray.load10x(string path) -> None
 This method loads bcells from a 10x type data file, and appends the cells onto this cell array.
@@ -58,5 +70,10 @@ This method uses the distance matrix to create a high dimentional projection of 
 
 ## bcrdist.cellarray.tolist() -> list
 This method returns a python representation of this cellarray. It returns a list of tuples, each tuple represents one cell. The tuples are
-in the format [cell-barcode, clonotype, cdr1, cdr2, cdr3] for unpaired data or [cell-barcode, clonotype, heavy-cdr1, heavy-cdr2, heavy-cdr3,
-light-cdr1, light-cdr2, light-cdr3] for paired data
+in these two different formats, depending on whether it is a paired or unpaired array
+```python
+(cell-barcode, clonotype, cdr1, cdr2, cdr3)
+(cell-barcode, clonotype, heavy-cdr1, heavy-cdr2, heavy-cdr3,light-cdr1, light-cdr2, light-cdr3)
+```
+
+
