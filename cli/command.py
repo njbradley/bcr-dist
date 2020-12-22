@@ -1,4 +1,3 @@
-import bcrdist
 import sys
 
 def help():
@@ -19,10 +18,11 @@ def main():
     for arg in sys.argv[1:]:
         if (arg[0] == '-'):
             if (name != ""):
-                raise ArgumentError("No value specified for arg '" + name + "'")
+                raise ValueError("No value specified for arg '" + name + "'")
             name = arg.replace('-','')
         elif (name != ""):
             kwargs[name] = arg
+            name = ""
         else:
             args.append(arg)
     
@@ -31,12 +31,15 @@ def main():
     
     if (len(args) < 1):
         print ("ERR: no input files specified")
+        help()
         return
     
+    import bcrdist
+    
     if (kwargs['type'] == "10x"):
-        arr = bcrdist.cell.load10x(args[0])
+        arr = bcrdist.load10x(args[0])
     elif (kwargs['type'] == "BD"):
-        arr = bcrdist.cell.loadBD(*args)
+        arr = bcrdist.loadBD(*args)
     else:
         print ("ERR: invalid input type")
         return
