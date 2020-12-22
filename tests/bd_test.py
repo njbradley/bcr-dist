@@ -6,7 +6,7 @@ if (len(sys.argv) < 1):
 
 infile = sys.argv[1]
 
-arr = bcrdist.cell.loadBD(infile);
+arr = bcrdist.loadBD(infile);
 arr.savePCs()
 arr.tsneplot()
 arr.umapplot()

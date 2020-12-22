@@ -20,6 +20,8 @@ struct itablestream {
 	char delim;
 	itablestream(string path);
 	void readline(tablerow* row);
+	bool good();
+	bool eof();
 };
 
 struct otablestream {

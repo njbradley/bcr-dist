@@ -11,41 +11,44 @@
 vector<dsbcell> cells;
 
 
-typedef struct {
+// typedef struct {
+//   PyObject_HEAD
+//   int num_strands;
+//   vector<dsbcell> double_cells;
+//   vector<ssbcell> single_cells;
+//   vector<bcell*> ref_cells;
+//   string name;
+//   string dist_file;
+// } py_bcell_vector;
+
+template <typename celltype>
+struct py_bcell_vector {
+  static_assert(std::is_base_of<bcell,celltype>::value,
+    "py_bcell_vector can only be used with a subclass of bcell"
+  );
   PyObject_HEAD
-  int num_strands;
-  vector<dsbcell> double_cells;
-  vector<ssbcell> single_cells;
-  vector<bcell*> ref_cells;
+  vector<celltype> cells;
   string name;
   string dist_file;
-} py_bcell_vector;
+};
 
-static void py_bcell_vector_dealloc(py_bcell_vector *self) {
+template <typename celltype>
+static void py_bcell_vector_dealloc(py_bcell_vector<celltype> *self) {
   Py_TYPE(self)->tp_free((PyObject *) self);
 }
 
-static PyObject* py_bcell_vector_update_ref(py_bcell_vector *self) {
-  self->ref_cells.clear();
-  if (self->num_strands == 1) {
-    for (ssbcell& cell : self->single_cells) {
-      self->ref_cells.push_back(&cell);
-    }
-  } else if (self->num_strands == 2) {
-    for (dsbcell& cell : self->double_cells) {
-      self->ref_cells.push_back(&cell);
-    }
-  }
-  Py_RETURN_NONE;
-}
-
-static PyObject* py_bcell_vector_load(py_bcell_vector* self, PyObject* args) {
+template <typename celltype>
+static PyObject* py_bcell_vector_load(py_bcell_vector<celltype>* self, PyObject* args) {
   // const char* filename;
   // if (!PyArg_ParseTuple(args, "s", &filename)) {
   //   return nullptr;
   // }
   
   ifstream ifile(self->name + ".bcrsavefile.tsv");
+  if (!ifile.good()) {
+    PyErr_SetString(PyExc_RuntimeError, "There is no save file");
+    return nullptr;
+  }
   string line;
   getline(ifile, line, ':');
   ifile >> line;
@@ -54,73 +57,103 @@ static PyObject* py_bcell_vector_load(py_bcell_vector* self, PyObject* args) {
   }
   getline(ifile, line, ':');
   ifile >> line;
-  if (self->dist_file == "") {
+  if (self->dist_file == "" and line != "<UNSET>") {
     self->dist_file = line;
   }
   
-  getline(ifile, line, ':');
-  ifile >> self->num_strands;
-  
   getline(ifile, line);
   getline(ifile, line);
   
-  if (self->num_strands == 1) {
+  getline(ifile, line);
+  while (!ifile.eof()) {
+    stringstream ss(line);
+    self->cells.emplace_back(ss);
     getline(ifile, line);
-    while (!ifile.eof()) {
-      stringstream ss(line);
-      self->single_cells.emplace_back(ss);
-      getline(ifile, line);
-    }
-  } else if (self->num_strands == 2) {
-    getline(ifile, line);
-    while (!ifile.eof()) {
-      stringstream ss(line);
-      self->double_cells.emplace_back(ss);
-      getline(ifile, line);
-    }
   }
   
-  py_bcell_vector_update_ref(self);
   Py_RETURN_NONE;
 }
 
-static int py_bcell_vector_type_init(py_bcell_vector *self, PyObject *args) {
-  self->num_strands = 0;
-  const char* newname = nullptr;
-  if (!PyArg_ParseTuple(args, "|s", &newname)) {
-    return -1;
-  }
-  if (newname != nullptr) {
-    self->name = newname;
-    
-    ifstream ifile(self->name + ".bcrsavefile.tsv");
-    if (ifile.good()) {
-      PyObject* newargs = PyTuple_New(0);
-      py_bcell_vector_load(self, newargs);
-      Py_DECREF(newargs);
-    }
-  }
-  return 0;
+template <typename celltype>
+PyObject* py_bcell_vector_append(py_bcell_vector<celltype>* self, PyObject* args) {
+  PyErr_SetString(PyExc_RuntimeError, "This function is not supported for this type");
+  return nullptr;
 }
 
-static PyObject* py_bcell_vector_load_dekosky_data(py_bcell_vector *self, PyObject *args) {
-  const char* path;
-  
-  if (!PyArg_ParseTuple(args, "s", &path)) {
+template <>
+PyObject* py_bcell_vector_append<dsbcell>(py_bcell_vector<dsbcell>* self, PyObject* args) {
+  PyObject* obj;
+  if (!PyArg_ParseTuple(args, "O", &obj)) {
+    obj = args;
+    PyErr_Clear();
+  }
+  const char* strings[8];
+  if (PyArg_ParseTuple(obj, "ssssssss", &strings[0], &strings[1], &strings[2],
+  &strings[3], &strings[4], &strings[5], &strings[6], &strings[7])) {
+    self->cells.emplace_back(
+      strings[0],
+      bcell_chain(strings[2], strings[3], strings[4]),
+      bcell_chain(strings[5], strings[6], strings[7]),
+      strings[1]
+    );
+  } else if (PyArg_ParseTuple(obj, "ssssss", &strings[0], &strings[1], &strings[2],
+  &strings[3], &strings[4], &strings[5])) {
+    PyErr_Clear();
+    self->cells.emplace_back(
+      strings[0],
+      bcell_chain(strings[2], strings[3]),
+      bcell_chain(strings[4], strings[5]),
+      strings[1]
+    );
+  } else {
     return nullptr;
   }
   
-  self->num_strands = 2;
-  if (self->name == "") {
-    self->name = path;
-  }
-  load_dekosky_data(path, self->double_cells);
-  
-  py_bcell_vector_update_ref(self);
   Py_RETURN_NONE;
 }
 
-static PyObject* py_bcell_vector_load_bd_data(py_bcell_vector *self, PyObject *args) {
+template <typename celltype>
+static int py_bcell_vector_type_init(py_bcell_vector<celltype> *self, PyObject *args) {
+  const char* newname = nullptr;
+  PyObject* obj;
+  if (PyArg_ParseTuple(args, "|s", &newname)) {
+    if (newname != nullptr) {
+      self->name = newname;
+      
+      ifstream ifile(self->name + ".bcrsavefile.tsv");
+      if (ifile.good()) {
+        PyObject* newargs = PyTuple_New(0);
+        py_bcell_vector_load(self, newargs);
+        Py_DECREF(newargs);
+      }
+    }
+    return 0;
+  } else if (PyArg_ParseTuple(args, "O", &obj)) {
+    PyErr_Clear();
+    PyObject* iterator = PyObject_GetIter(obj);
+    PyObject* item;
+    
+    if (iterator == nullptr) {
+      PyErr_SetString(PyExc_RuntimeError, "Non iterable passed to constructor");
+      return -1;
+    }
+    
+    while (item = PyIter_Next(iterator)) {
+      PyObject* params = Py_BuildValue("O", item);
+      py_bcell_vector_append<celltype>(self, params);
+      Py_DECREF(params);
+      Py_DECREF(item);
+    }
+    
+    Py_DECREF(iterator);
+    return 0;
+  }
+  
+  return -1;
+}
+
+template <typename celltype>
+static PyObject* py_bcell_vector_load_bd_data(py_bcell_vector<celltype> *self, PyObject *args) {
     const char* heavy;
     const char* light = nullptr;
     
@@ -132,7 +165,6 @@ static PyObject* py_bcell_vector_load_bd_data(py_bcell_vector *self, PyObject *a
     string heavy_str = heavy;
     
     if (light != nullptr) {
-      self->num_strands = 2;
       string light_str = light;
       
       if (self->name == "") {
@@ -145,21 +177,26 @@ static PyObject* py_bcell_vector_load_bd_data(py_bcell_vector *self, PyObject *a
         self->name = newname;
       }
       
-      load_bd_data(heavy_str, light_str, self->double_cells);
+      if (!load_bd_data(heavy_str, light_str, self->cells)) {
+        PyErr_SetString(PyExc_RuntimeError, "File not found");
+        return nullptr;
+      }
     } else {
-      self->num_strands = 2;
       if (self->name == "") {
         self->name = heavy_str;
       }
       
-      load_bd_data(heavy_str, self->double_cells);
+      if (!load_bd_data(heavy_str, self->cells)) {
+        PyErr_SetString(PyExc_RuntimeError, "File not found");
+        return nullptr;
+      }
     }
     
-    py_bcell_vector_update_ref(self);
     Py_RETURN_NONE;
 }
 
-static PyObject* py_bcell_vector_load_10x_data(py_bcell_vector *self, PyObject *args) {
+template <typename celltype>
+static PyObject* py_bcell_vector_load_10x_data(py_bcell_vector<celltype> *self, PyObject *args) {
     const char* filename;
     if (!PyArg_ParseTuple(args, "s", &filename)) {
         return NULL;
@@ -169,52 +206,59 @@ static PyObject* py_bcell_vector_load_10x_data(py_bcell_vector *self, PyObject *
       self->name = filename;
     }
     
-    self->num_strands = 2;
-    load_10x_data(filename, self->double_cells);
+    if (!load_10x_data(filename, self->cells)) {
+      PyErr_SetString(PyExc_RuntimeError, "File not found");
+      return nullptr;
+    }
     
-    py_bcell_vector_update_ref(self);
     Py_RETURN_NONE;
 }
 
-static PyObject* py_bcell_vector_tolist(py_bcell_vector *self) {
-  if (self->num_strands == 1) {
-    PyObject* list = PyList_New(self->single_cells.size());
-    int i = 0;
-    for (ssbcell& cell : self->single_cells) {
-      PyObject* cell_list = PyList_New(5);
-      string vals[] = {cell.id, cell.clonotype, cell.chain.cdr1, cell.chain.cdr2, cell.chain.cdr3 };
-      int j = 0;
-      for (string val : vals) {
-        PyList_SET_ITEM(cell_list, j, PyUnicode_FromString(val.c_str()));
-        j ++;
-      }
-      PyList_SET_ITEM(list, i, cell_list);
-      i++;
+template <typename celltype>
+PyObject* py_bcell_vector_tolist(py_bcell_vector<celltype> *self) {
+  PyErr_SetString(PyExc_RuntimeError, "This type of cell vector is not compatable");
+  return NULL;
+}
+
+template <>
+PyObject* py_bcell_vector_tolist<ssbcell>(py_bcell_vector<ssbcell>* self) {
+  PyObject* list = PyList_New(self->cells.size());
+  int i = 0;
+  for (ssbcell& cell : self->cells) {
+    PyObject* cell_list = PyList_New(5);
+    string vals[] = {cell.id, cell.clonotype, cell.chain.cdr1, cell.chain.cdr2, cell.chain.cdr3 };
+    int j = 0;
+    for (string val : vals) {
+      PyList_SET_ITEM(cell_list, j, PyUnicode_FromString(val.c_str()));
+      j ++;
     }
-    return list;
-  } else if (self->num_strands == 2) {
-    PyObject* list = PyList_New(self->double_cells.size());
-    // cout << list<< endl;
-    int i = 0;
-    for (dsbcell& cell : self->double_cells) {
-      // cout << i << endl;
-      // cout << &cell << endl;
-      PyObject* cell_list = Py_BuildValue("ssssssss",
-        cell.id.c_str(), cell.clonotype.c_str(),
-        cell.heavy.cdr1.c_str(), cell.heavy.cdr2.c_str(), cell.heavy.cdr3.c_str(),
-        cell.light.cdr1.c_str(), cell.light.cdr2.c_str(), cell.light.cdr3.c_str()
-      );
-      PyList_SET_ITEM(list, i, cell_list);
-      i++;
-    }
-    return list;
-  } else {
-    return nullptr;
+    PyList_SET_ITEM(list, i, cell_list);
+    i++;
   }
+  return list;
+}
+
+template <>
+PyObject* py_bcell_vector_tolist<dsbcell>(py_bcell_vector<dsbcell>* self) {
+  PyObject* list = PyList_New(self->cells.size());
+  // cout << list<< endl;
+  int i = 0;
+  for (dsbcell& cell : self->cells) {
+    // cout << i << endl;
+    // cout << &cell << endl;
+    PyObject* cell_list = Py_BuildValue("ssssssss",
+      cell.id.c_str(), cell.clonotype.c_str(),
+      cell.heavy.cdr1.c_str(), cell.heavy.cdr2.c_str(), cell.heavy.cdr3.c_str(),
+      cell.light.cdr1.c_str(), cell.light.cdr2.c_str(), cell.light.cdr3.c_str()
+    );
+    PyList_SET_ITEM(list, i, cell_list);
+    i++;
+  }
+  return list;
 }
       
-
-static PyObject* py_bcell_vector_generate_dist_matrix(py_bcell_vector *self, PyObject *args) {
+template <typename celltype>
+static PyObject* py_bcell_vector_generate_dist_matrix(py_bcell_vector<celltype> *self, PyObject *args) {
     const char* new_dist_file = nullptr;
     if (!PyArg_ParseTuple(args, "|s", &new_dist_file)) {
       return nullptr;
@@ -228,12 +272,13 @@ static PyObject* py_bcell_vector_generate_dist_matrix(py_bcell_vector *self, PyO
       self->dist_file = ".bcrdistmatrix.tsv";
     }
     
-    save_dist_matrix(self->name + self->dist_file, self->ref_cells);
+    save_dist_matrix(self->name + self->dist_file, self->cells);
     
     Py_RETURN_NONE;
 }
 
-static PyObject* py_bcell_vector_get_dist_matrix(py_bcell_vector* self, PyObject* args) {
+template <typename celltype>
+static PyObject* py_bcell_vector_get_dist_matrix(py_bcell_vector<celltype>* self, PyObject* args) {
   if (self->dist_file == "") {
     PyObject* newargs = PyTuple_New(0);
     py_bcell_vector_generate_dist_matrix(self, newargs);
@@ -275,27 +320,29 @@ static PyObject* py_bcell_vector_get_dist_matrix(py_bcell_vector* self, PyObject
   return PyTuple_Pack(2, np_data, cell_ids);
 }
 
-static PyObject* py_bcell_vector_name(py_bcell_vector* self) {
+template <typename celltype>
+static PyObject* py_bcell_vector_name(py_bcell_vector<celltype>* self) {
   return PyUnicode_FromString(self->name.c_str());
 }
 
-static PyObject* py_bcell_vector_summary(py_bcell_vector* self) {
+template <typename celltype>
+static PyObject* py_bcell_vector_summary(py_bcell_vector<celltype>* self) {
   std::stringstream message;
-  //message << " Summary of bcell array object:" << endl;
-  if (self->num_strands == 0) {
-    message << "  Object uninitialized..." << endl;
-  } else if (self->num_strands == 1) {
-    message << "  Single stranded cell array" << endl;
-    message << "  " << self->single_cells.size() << " cells" << endl;
-  } else if (self->num_strands == 2) {
-    message << "  Double stranded cell array" << endl;
-    message << "  " << self->double_cells.size() << " cells" << endl;
+  message << "  cell array: '" << self->name << "'" << endl;
+  if (self->dist_file.length() > 0) {
+    message << "  distance matrix at: '" << self->name << self->dist_file << "'" << endl;
   }
+  ifstream ftest(self->name + ".bcrsavefile.tsv");
+  if (ftest.good()) {
+    message << "  save file at: '" << self->name << ".bcrsavefile.tsv'" << endl;
+  }
+  message << "  " << self->cells.size() << " cells" << endl;
   
   return PyUnicode_FromString(message.str().c_str());
 }
 
-static PyObject* py_bcell_vector_repr(py_bcell_vector* self) {
+template <typename celltype>
+static PyObject* py_bcell_vector_repr(py_bcell_vector<celltype>* self) {
   string message = "<cbcrdist.bcellarray built in object\n";
   PyObject* summary_pystr = py_bcell_vector_summary(self);
   const char* summary = PyUnicode_AsUTF8(summary_pystr);
@@ -305,7 +352,8 @@ static PyObject* py_bcell_vector_repr(py_bcell_vector* self) {
   return PyUnicode_FromString(message.c_str());
 }
 
-static PyObject* py_bcell_vector_save(py_bcell_vector* self, PyObject* args) {
+template <typename celltype>
+static PyObject* py_bcell_vector_save(py_bcell_vector<celltype>* self, PyObject* args) {
   // const char* filename;
   //
   // if (!PyArg_ParseTuple(args, "s", &filename)) {
@@ -314,60 +362,62 @@ static PyObject* py_bcell_vector_save(py_bcell_vector* self, PyObject* args) {
   
   ofstream ofile(self->name + ".bcrsavefile.tsv");
   ofile << "# name:" << self->name << endl;
-  ofile << "# dist_file:" << self->dist_file << endl;
-  ofile << "# num_strands:" << self->num_strands << endl;
-  if (self->num_strands == 1) {
+  if (self->dist_file == "") {
+    ofile << "# dist_file:<UNSET>" << endl;
+  } else {
+    ofile << "# dist_file:" << self->dist_file << endl;
+  }
+  if constexpr(std::is_same<celltype,ssbcell>::value) {
     ofile << "id\tcdr1\tcdr2\tcdr3" << endl;
-    for (ssbcell& cell : self->single_cells) {
-      cell.to_file(ofile);
-      ofile << endl;
-    }
-  } else if (self->num_strands == 2) {
+  } else if constexpr(std::is_same<celltype,dsbcell>::value) {
     ofile << "id\thcdr1\thcdr2\thcdr3\tlcdr1\tlcdr2\tlcdr3" << endl;
-    for (dsbcell& cell : self->double_cells) {
-      cell.to_file(ofile);
-      ofile << endl;
-    }
+  }
+  
+  for (celltype& cell : self->cells) {
+    cell.to_file(ofile);
+    ofile << endl;
   }
   
   Py_RETURN_NONE;
 }
 
+template <typename celltype>
 static PyMethodDef py_bcell_vector_methods[] = {
-    {"generate_dist_matrix", (PyCFunction) py_bcell_vector_generate_dist_matrix, METH_VARARGS,
+    {"generate_dist_matrix", (PyCFunction) py_bcell_vector_generate_dist_matrix<celltype>, METH_VARARGS,
      "calculates the distance matrix and writes it to a file"},
-    {"loadBD", (PyCFunction) py_bcell_vector_load_bd_data, METH_VARARGS,
+    {"append", (PyCFunction) py_bcell_vector_append<celltype>, METH_VARARGS,
+     "appends a cell in the format of a tuple"},
+    {"loadBD", (PyCFunction) py_bcell_vector_load_bd_data<celltype>, METH_VARARGS,
      "loads data from two bd files"},
-    {"load10x", (PyCFunction) py_bcell_vector_load_10x_data, METH_VARARGS,
+    {"load10x", (PyCFunction) py_bcell_vector_load_10x_data<celltype>, METH_VARARGS,
      "loads data from one 10x files"},
-    {"distmatrix", (PyCFunction) py_bcell_vector_get_dist_matrix, METH_NOARGS,
+    {"distmatrix", (PyCFunction) py_bcell_vector_get_dist_matrix<celltype>, METH_NOARGS,
      "returns a numpy array of the distance matrix as well as all of the cell ids"},
-    {"name", (PyCFunction) py_bcell_vector_name, METH_NOARGS,
+    {"name", (PyCFunction) py_bcell_vector_name<celltype>, METH_NOARGS,
      "returns the name"},
-    {"summary", (PyCFunction) py_bcell_vector_summary, METH_NOARGS,
+    {"summary", (PyCFunction) py_bcell_vector_summary<celltype>, METH_NOARGS,
      "returns a string summary of the cell array"},
-    {"save", (PyCFunction) py_bcell_vector_save, METH_NOARGS,
+    {"save", (PyCFunction) py_bcell_vector_save<celltype>, METH_NOARGS,
      "returns a string summary of the cell array"},
-    {"load", (PyCFunction) py_bcell_vector_load, METH_NOARGS,
+    {"load", (PyCFunction) py_bcell_vector_load<celltype>, METH_NOARGS,
      "returns a string summary of the cell array"},
-    {"loaddekosky", (PyCFunction) py_bcell_vector_load_dekosky_data, METH_VARARGS,
-     "loads dekosky data" },
-    {"tolist", (PyCFunction) py_bcell_vector_tolist, METH_NOARGS,
+    {"tolist", (PyCFunction) py_bcell_vector_tolist<celltype>, METH_NOARGS,
      "outputs a list of the data"},
     {NULL}  /* Sentinel */
 };
 
+template <typename celltype>
 static PyTypeObject py_bcell_vector_type = {
   PyVarObject_HEAD_INIT(NULL, 0)
   .tp_name = "cbcrdist.bcellarray",
-  .tp_basicsize = sizeof(py_bcell_vector),
+  .tp_basicsize = sizeof(py_bcell_vector<celltype>),
   .tp_itemsize = 0,
-  .tp_dealloc = (destructor) py_bcell_vector_dealloc,
-  .tp_repr = (reprfunc) py_bcell_vector_repr,
+  .tp_dealloc = (destructor) py_bcell_vector_dealloc<celltype>,
+  .tp_repr = (reprfunc) py_bcell_vector_repr<celltype>,
   .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
   .tp_doc = "An array of double stranded bcells",
-  .tp_methods = py_bcell_vector_methods,
-  .tp_init = (initproc)py_bcell_vector_type_init,
+  .tp_methods = py_bcell_vector_methods<celltype>,
+  .tp_init = (initproc)py_bcell_vector_type_init<celltype>,
   .tp_new = PyType_GenericNew
 };
 
@@ -446,7 +496,7 @@ PyMODINIT_FUNC PyInit_cbcrdist(void) {
     //load_persistant_data();
     
     
-    if (PyType_Ready(&py_bcell_vector_type) < 0) {
+    if (PyType_Ready(&py_bcell_vector_type<dsbcell>) < 0) {
       return nullptr;
     }
     // if (PyType_Ready(&py_bcell_type) < 0) {
@@ -456,9 +506,9 @@ PyMODINIT_FUNC PyInit_cbcrdist(void) {
     PyObject* module = PyModule_Create(&cbcrdistmodule);
     import_array();
     
-    Py_INCREF(&py_bcell_vector_type);
-    if (PyModule_AddObject(module, "bcellarray", (PyObject *) &py_bcell_vector_type) < 0) {
-      Py_DECREF(&py_bcell_vector_type);
+    Py_INCREF(&py_bcell_vector_type<dsbcell>);
+    if (PyModule_AddObject(module, "bcellarray", (PyObject *) &py_bcell_vector_type<dsbcell>) < 0) {
+      Py_DECREF(&py_bcell_vector_type<dsbcell>);
       Py_DECREF(module);
       return nullptr;
     }

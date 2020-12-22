@@ -49,10 +49,6 @@ char get_delim(string path) {
 }
 
 itablestream::itablestream(string path): ifile(path), delim(get_delim(path)) {
-	if (!ifile.good()) {
-		cout << "ERR: file " << path << " does not exist" << endl;
-		exit(1);
-	}
 	string line_str;
 	do {
 		getline(ifile, line_str);
@@ -82,6 +78,14 @@ void itablestream::readline(tablerow* row) {
 			row->add(headers[i], word);
 		}
 	}
+}
+
+bool itablestream::good() {
+	return ifile.good();
+}
+
+bool itablestream::eof() {
+	return ifile.eof();
 }
 
 

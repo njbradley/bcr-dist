@@ -6,9 +6,14 @@
 #include "table.h"
 #include "data.h"
 
-void load_bd_data(string path_heavy, string path_light, vector<dsbcell>& cells) {
+bool load_bd_data(string path_heavy, string path_light, vector<dsbcell>& cells) {
 	itablestream itable_heavy(path_heavy);
 	itablestream itable_light(path_light);
+	
+	if (!itable_heavy.good() or !itable_light.good()) {
+		return false;
+	}
+	
 	tablerow hrow(&itable_heavy);
 	tablerow lrow(&itable_light);
 	
@@ -34,10 +39,16 @@ void load_bd_data(string path_heavy, string path_light, vector<dsbcell>& cells) 
 		lrow = tablerow(&itable_light);
 	}
 	cout << "sucessfully loaded " << cells.size() << " double stranded cells from files " << path_heavy << ' ' << path_light << endl;
+	return true;
 }
 
-void load_bd_data(string path, vector<dsbcell>& cells) {
+bool load_bd_data(string path, vector<dsbcell>& cells) {
 	itablestream itable(path);
+	
+	if (!itable.good()) {
+		return false;
+	}
+	
 	tablerow row(&itable);
 	
 	while (!row.eof) {
@@ -56,11 +67,17 @@ void load_bd_data(string path, vector<dsbcell>& cells) {
 		row = tablerow(&itable);
 	}
 	cout << "sucessfully loaded " << cells.size() << " double stranded cells from file " << path << endl;
+	return true;
 }
 
 
-void load_10x_data(string path, vector<dsbcell>& cells) {
+bool load_10x_data(string path, vector<dsbcell>& cells) {
 	itablestream itable(path);
+	
+	if (!itable.good()) {
+		return false;
+	}
+	
 	tablerow row(&itable);
 	while (!row.eof) {
 		string id = row.get("barcode");
@@ -97,6 +114,7 @@ void load_10x_data(string path, vector<dsbcell>& cells) {
 		}
 	}
 	cout << "sucessfully loaded in " << cells.size() << " cells from file " << path << endl;
+	return true;
 }
 
 
@@ -132,23 +150,7 @@ void load_dekosky_data(string path, vector<dsbcell>& cells) {
 
 
 
-void save_dist_matrix(string path, vector<bcell*>& cells) {
-	vector<string> ids {"cell-id"};
-	for (bcell* cell : cells) {
-		ids.push_back(cell->id);
-	}
-	otablestream otable(path, &ids);
-	for (int i = cells.size()-1; i >= 0; i --) {
-		tablerow row;
-		row.add("cell-id", cells[i]->id);
-		for (int j = 0; j < i; j ++) {
-			double dist = cells[i]->distance(cells[j]);
-			row.add(cells[j]->id, dist);
-		}
-		otable.writeline(&row);
-	}
-	cout << "sucessfully saved " << cells.size() << " cells into the distance matrix " << path << endl;
-}
+
 
 
 #endif
