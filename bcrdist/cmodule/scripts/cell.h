@@ -8,6 +8,7 @@ struct bcell {
 	string clonotype;
 	bcell(string newid, string newclono);
 	bcell(istream& ifile);
+	virtual ~bcell();
 	virtual double distance(bcell* other) = 0;
 	virtual void to_file(ostream& ofile);
 };

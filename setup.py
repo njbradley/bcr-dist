@@ -14,6 +14,9 @@ cext = setuptools.Extension(
     include_dirs = [
         numpy.get_include(),
         'bcrdist/cmodule/scripts/packages'
+    ],
+    extra_compile_args = [
+        "-Wno-sign-compare",
     ]
 )
 

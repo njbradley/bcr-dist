@@ -111,7 +111,7 @@ void load_dekosky_data(string path, vector<dsbcell>& cells) {
 		for (char hl : heavy_light) {
 			string nucseq = row.get(hl + string("3 Junction"));
 			for (int j = 0; j < nucseq.length(); j += 3) {
-				codon c {toupper(nucseq[j]), toupper(nucseq[j+1]), toupper(nucseq[j+2])};
+				codon c {char(toupper(nucseq[j])), char(toupper(nucseq[j+1])), char(toupper(nucseq[j+2]))};
 				char aa = nuc_to_aa[c];
 				aaseqs[i].push_back(aa);
 			}

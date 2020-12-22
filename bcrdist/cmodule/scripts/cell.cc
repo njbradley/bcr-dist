@@ -13,6 +13,10 @@ bcell::bcell(istream& ifile) {
 	ifile >> id >> clonotype;
 }
 
+bcell::~bcell() {
+	
+}
+
 void bcell::to_file(ostream& ofile) {
 	ofile << id << '\t' << clonotype << '\t';
 }
