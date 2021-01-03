@@ -29,6 +29,9 @@ setuptools.setup(
     package_data = {
         "bcrdist": ["data/*.*"]
     },
+    install_requires = [
+        "numpy", "scikit-learn", "umap-learn", "matplotlib",
+    ],
     # entry_points = {
     #     "console_scripts": [
     #         'bcrdist:
