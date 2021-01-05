@@ -1,6 +1,8 @@
 # bcr-dist
 ## the bcr-dist pipeline
 
+It is inspired by tcr-dist, (https://github.com/phbradley/tcr-dist).
+
 This is bcrdist, a python library that computes the relative distances between bcr chains. These distances can then be used to construct a high dimentional mapping of the cells through kernel pca, or create tsne/umap plots to analyze the cells.
 
 # Installation
