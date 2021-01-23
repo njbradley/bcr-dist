@@ -44,7 +44,7 @@ If you want to customize the processing pipeline, you will need to write your ow
 ```python
 import bcrdist
 
-cellarray = bcrdist.cell.load10X("filtered_contig_annotations.csv")
+cellarray = bcrdist.load10X("filtered_contig_annotations.csv")
 cellarray.savePCS()
 cellarray.umapplot()
 cellarray.tsneplot()
@@ -56,7 +56,7 @@ calculations.py:
 ```python
 import bcrdist
 
-cellarray = bcrdist.cell.load10X("filtered_contig_annotations.csv")
+cellarray = bcrdist.load10X("filtered_contig_annotations.csv")
 cellarray.distmatrix()
 cellarray.save()
 ```
@@ -65,7 +65,7 @@ plots.py:
 ```python
 import bcrdist
 
-cellarray = bcrdist.cell.array("filtered_contig_annotations.csv")
+cellarray = bcrdist.cellarray("filtered_contig_annotations.csv")
 cellarray.savePCS()
 cellarray.umapplot()
 cellarray.tsneplot()
