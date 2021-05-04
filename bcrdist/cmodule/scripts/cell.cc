@@ -21,8 +21,12 @@ void bcell::to_file(ostream& ofile) {
 	ofile << id << '\t' << clonotype << '\t';
 }
 
+
+bcell_chain::bcell_chain(): valid(false) {
+	
+}
+
 bcell_chain::bcell_chain(string v_gene, string newcdr3): cdr3(newcdr3), valid(true) {
-	//cout << newid << ' ' << v_gene << ' ' << newcdr3 << endl;
 	stringstream vgeness(v_gene);
 	while (!vgeness.eof() and vgenes_to_cdrs.find(v_gene) == vgenes_to_cdrs.end()) {
 		getline(vgeness, v_gene, ';');

@@ -18,6 +18,7 @@ struct bcell_chain {
 	string cdr2;
 	string cdr3;
 	bool valid;
+	bcell_chain();
 	bcell_chain(string v_gene, string newcdr3);
 	bcell_chain(string newcdr1, string newcdr2, string newcdr3);
 	bcell_chain(istream& ifile);

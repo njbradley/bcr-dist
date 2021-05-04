@@ -70,6 +70,13 @@ bool load_bd_data(string path, vector<dsbcell>& cells) {
 	return true;
 }
 
+bcell_chain get_10x_chain(tablerow* row) {
+	if (row->get("cdr1") != "") {
+		return bcell_chain(row->get("cdr1"), row->get("cdr2"), row->get("cdr3"));
+	} else {
+		return bcell_chain(row->get("v_gene"), row->get("cdr3"));
+	}
+}
 
 bool load_10x_data(string path, vector<dsbcell>& cells) {
 	itablestream itable(path);
@@ -90,18 +97,18 @@ bool load_10x_data(string path, vector<dsbcell>& cells) {
 		string chain = row.get("chain");
 		if (match == -1) {
 			if (chain == "IGL" or chain == "IGK") {
-				cells.emplace_back(id, bcell_chain("","",""), bcell_chain(row.get("v_gene"), row.get("cdr3")), row.get("raw_clonotype_id"));
+				cells.emplace_back(id, bcell_chain(), get_10x_chain(&row), row.get("raw_clonotype_id"));
 			} else if (chain == "IGH") {
-				cells.emplace_back(id, bcell_chain(row.get("v_gene"), row.get("cdr3")), bcell_chain("","",""), row.get("raw_clonotype_id"));
+				cells.emplace_back(id, get_10x_chain(&row), bcell_chain(), row.get("raw_clonotype_id"));
 			}
 		} else {
 			if (chain == "IGL" or chain == "IGK") {
 				if (!cells[match].light.valid) {
-					cells[match].light = bcell_chain(row.get("v_gene"), row.get("cdr3"));
+					cells[match].light = get_10x_chain(&row);
 				}
 			} else if (chain == "IGH") {
 				if (!cells[match].heavy.valid) {
-					cells[match].heavy = bcell_chain(row.get("v_gene"), row.get("cdr3"));
+					cells[match].heavy = get_10x_chain(&row);
 				}
 			}
 		}
