@@ -31,7 +31,7 @@ class cellarray(cbcrdist.bcellarray):
         
         data = self.tolist()
         
-        tsne = tsnefunc.fit_transform(dist)
+        tsne = self.tsnedata()
         
         
         if (type(colorby) == type(lambda x: x)):
