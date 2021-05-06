@@ -138,7 +138,7 @@ static int py_bcell_vector_type_init(py_bcell_vector<celltype> *self, PyObject *
       return -1;
     }
     
-    while (item = PyIter_Next(iterator)) {
+    while ((item = PyIter_Next(iterator))) {
       PyObject* params = Py_BuildValue("O", item);
       py_bcell_vector_append<celltype>(self, params);
       Py_DECREF(params);
@@ -387,8 +387,13 @@ static PyObject* py_bcell_vector_save(py_bcell_vector<celltype>* self, PyObject*
 }
 
 template <typename celltype>
+static PyObject* py_bcell_vector_size(py_bcell_vector<celltype>* self) {
+  return PyLong_FromLong(self->cells.size());
+};
+
+template <typename celltype>
 static PyMethodDef py_bcell_vector_methods[] = {
-    {"generate_dist_matrix", (PyCFunction) py_bcell_vector_generate_dist_matrix<celltype>, METH_VARARGS,
+    {"gen_distmatrix", (PyCFunction) py_bcell_vector_generate_dist_matrix<celltype>, METH_VARARGS,
      "calculates the distance matrix and writes it to a file"},
     {"append", (PyCFunction) py_bcell_vector_append<celltype>, METH_VARARGS,
      "appends a cell in the format of a tuple"},
@@ -407,6 +412,8 @@ static PyMethodDef py_bcell_vector_methods[] = {
     {"load", (PyCFunction) py_bcell_vector_load<celltype>, METH_NOARGS,
      "returns a string summary of the cell array"},
     {"tolist", (PyCFunction) py_bcell_vector_tolist<celltype>, METH_NOARGS,
+     "outputs a list of the data"},
+    {"size", (PyCFunction) py_bcell_vector_size<celltype>, METH_NOARGS,
      "outputs a list of the data"},
     {NULL}  /* Sentinel */
 };

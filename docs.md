@@ -41,7 +41,7 @@ This method loads bcells from a 10x type data file, and appends the cells onto t
 ## bcrdist.cellarray.loadBD(string heavypath, [string lightpath]) -> None
 This method loads bcells from one or two bd data files and appends the cells to the cell array. An error is thrown if the loaded cells are not the same type (paired/not paired) as the cells in the array.
 
-## bcrdist.cellarray.generate_dist_matrix() -> None
+## bcrdist.cellarray.gen_distmatrix() -> None
 This method generates a distance matrix with the current cells, and writes it to a file. The file path is the name + ".bcrdistmatrix.tsv"
 Unlike bcrdist.cellarray.distmatrix(), this method will generate a matrix even if there is already one saved to file, so it is useful to regenerate the distance matrix. This can also be accomplished by deleting the distance matrix file.
 
@@ -75,5 +75,7 @@ in these two different formats, depending on whether it is a paired or unpaired 
 (cell-barcode, clonotype, cdr1, cdr2, cdr3)
 (cell-barcode, clonotype, heavy-cdr1, heavy-cdr2, heavy-cdr3,light-cdr1, light-cdr2, light-cdr3)
 ```
+## bcrdist.cellarray.size() -> int
+This method returns the number of cells in the cell array
 
 
