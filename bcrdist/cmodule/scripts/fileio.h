@@ -14,8 +14,7 @@ void load_dekosky_data(string path, vector<dsbcell>& cells);
 template <typename celltype>
 void save_dist_matrix(string path, vector<celltype>& cells);
 
-
-
+void read_dist_matrix(string path, float* matrix, int dim);
 
 
 
@@ -26,21 +25,19 @@ void save_dist_matrix(string path, vector<celltype>& cells);
 
 template <typename celltype>
 void save_dist_matrix(string path, vector<celltype>& cells) {
-	vector<string> ids {"cell-id"};
-	for (celltype& cell : cells) {
-		ids.push_back(cell.id);
+	ofstream ofile(path);
+	ofile << "cell-id";
+	for (int i = 0; i < cells.size(); i ++) {
+		ofile << '\t' << cells[i].id;
 	}
-	otablestream otable(path, &ids);
-	for (int i = cells.size()-1; i >= 0; i --) {
-		tablerow row;
-		row.add("cell-id", cells[i].id);
+	ofile << endl;
+	for (int i = 0; i < cells.size(); i ++) {
+		ofile << cells[i].id;
 		for (int j = 0; j < i; j ++) {
-			double dist = cells[i].distance(&cells[j]);
-			row.add(cells[j].id, dist);
+			ofile << '\t' << cells[i].distance(&cells[j]);
 		}
-		otable.writeline(&row);
+		ofile << endl;
 	}
-	cout << "sucessfully saved " << cells.size() << " cells into the distance matrix " << path << endl;
 }
 
 #endif

@@ -156,7 +156,29 @@ void load_dekosky_data(string path, vector<dsbcell>& cells) {
 			
 
 
-
+void read_dist_matrix(string path, float* matrix, int dim) {
+	ifstream ifile(path);
+	string buff;
+	getline(ifile, buff);
+	for (int i = 0; i < dim; i ++) {
+		ifile >> buff;
+		for (int j = 0; j < i; j ++) {
+			float val = -2;
+			ifile >> val;
+			matrix[i*dim + j] = val;
+		}
+	}
+	
+	for (int i = 0; i < dim; i ++) {
+		matrix[i*dim + i] = 0;
+	}
+	
+	for (int i = 0; i < dim; i ++) {
+		for (int j = i+1; j < dim; j ++) {
+			matrix[i*dim + j] = matrix[j*dim + i];
+		}
+	}
+}
 
 
 

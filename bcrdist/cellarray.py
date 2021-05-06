@@ -17,13 +17,18 @@ class cellarray(cbcrdist.bcellarray):
     libraries and functions
     '''
     
+    def tsnedata(self):
+        tsnefunc = skmanifold.TSNE(n_components = 2, metric = 'precomputed')
+        
+        dist, ids = self.distmatrix()
+        
+        tsne = tsnefunc.fit_transform(dist)
+        return tsne
+    
     def tsneplot(self, path = None, colorby = None):
         if (path == None):
             path = self.name() + "-tsneplot.png"
         
-        tsnefunc = skmanifold.TSNE(n_components = 2, metric = 'precomputed')
-        
-        dist, ids = self.distmatrix()
         data = self.tolist()
         
         tsne = tsnefunc.fit_transform(dist)
@@ -49,27 +54,36 @@ class cellarray(cbcrdist.bcellarray):
             plot.colorbar()
         plot.savefig(path)
     
-    def savePCs(self, path = None):
-        if (path == None):
-            path = self.name() + "-pcs.csv"
+    def PCdata(self, n_pcs = 75):
         dist, ids = self.distmatrix()
-        pcafunc = skdecomp.KernelPCA(75, kernel='precomputed')
+        pcafunc = skdecomp.KernelPCA(n_pcs, kernel='precomputed')
         kernel = np.exp(-dist**2 / dist.max()**2)
         pcs = pcafunc.fit_transform(kernel)
-        
-        pcstxt = np.concatenate((np.array(ids).reshape(-1,1), pcs.astype(str)), axis=1)
-        np.savetxt(path, pcstxt, delimiter=',', fmt='%s', comments='', header = "cell_index," + ','.join(["pc" + str(i) for i in range(75)]))
+        return pcs
     
-    def umapplot(self, path=None, colorby=None):
+    def savePCs(self, path = None, n_pcs = 75):
         if (path == None):
-            path = self.name() + "-umapplot.png"
-        
+            path = self.name() + "-pcs.csv"
+        pcs = self.PCdata(n_pcs)
+        pcstxt = np.concatenate((np.array(ids).reshape(-1,1), pcs.astype(str)), axis=1)
+        np.savetxt(path, pcstxt, delimiter=',', fmt='%s', comments='', header = "cell_index," + ','.join(["pc" + str(i) for i in range(n_pcs)]))
+    
+    def umapdata(self):
         import umap
         dist, ids = self.distmatrix()
         data = self.tolist()
         
         umapfunc = umap.UMAP(metric = "precomputed")
         umapout = umapfunc.fit_transform(dist)
+        return umapout
+    
+    def umapplot(self, path=None, colorby=None):
+        if (path == None):
+            path = self.name() + "-umapplot.png"
+        
+        data = self.tolist()
+        
+        umapout = self.umapdata()
         
         if (type(colorby) == type(lambda x: x)):
             colors = [colorby(cell) for cell in data]

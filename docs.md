@@ -65,7 +65,7 @@ or "-tsne-plot.png". This method needs the umap library to be installed.
 The colorby parameter is used to color points. A function that returns a valid matplotlib color can be passed in. The function is passed a python list
 in the format that is returned from bcrdist.cellarray.tolist(), for every cell.
 
-## bcrdist.cellarray.savePCs([n_pcs = 250, string path]) -> None
+## bcrdist.cellarray.savePCs([n_pcs = 75, string path]) -> None
 This method uses the distance matrix to create a high dimentional projection of the cells with kernel pca. The number of pcs is set with n_pcs, and if a path is not specified, the file is saved to the name + "-pcs.csv"
 
 ## bcrdist.cellarray.tolist() -> list

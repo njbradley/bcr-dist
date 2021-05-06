@@ -293,29 +293,34 @@ static PyObject* py_bcell_vector_get_dist_matrix(py_bcell_vector<celltype>* self
     PyList_SET_ITEM(cell_ids, i, id);
   }
   
-  double* data = new double[num_cells*num_cells];
+  float* data = new float[num_cells*num_cells];
   for (int i = 0; i < num_cells*num_cells; i ++) {
     data[i] = -1;
   }
   
-  for (int i = 0; i < num_cells; i ++) {
-    tablerow row(&itable);
-    for (int j = 0; j < num_cells-i; j ++) {
-      if (num_cells-i == j+1) {
-        data[(num_cells-i-1)*num_cells + j] = 0;
-      } else {
-        //cout << row.get(itable.headers[j+1]) << ' ' << std::atof(row.get(itable.headers[j+1]).c_str()) << endl;
-        data[(num_cells-i-1)*num_cells + j] = std::atof(row.get(itable.headers[j+1]).c_str());
-      }
-    }
-  }
-  for (int i = 0; i < num_cells; i ++) {
-    for (int j = i; j < num_cells; j ++) {
-      data[i*num_cells + j] = data[j*num_cells + i];
-    }
-  }
+  read_dist_matrix(self->name + self->dist_file, data, num_cells);
+  
+  // for (int i = 0; i < num_cells; i ++) {
+  //   tablerow row(&itable);
+  //   for (int j = 0; j < num_cells-i; j ++) {
+  //     if (num_cells-i == j+1) {
+  //       data[(num_cells-i-1)*num_cells + j] = 0;
+  //     } else {
+  //       //cout << row.get(itable.headers[j+1]) << ' ' << std::atof(row.get(itable.headers[j+1]).c_str()) << endl;
+  //       data[(num_cells-i-1)*num_cells + j] = std::atof(row.get(itable.headers[j+1]).c_str());
+  //     }
+  //   }
+  // }
+  // for (int i = 0; i < num_cells; i ++) {
+  //   for (int j = i; j < num_cells; j ++) {
+  //     data[i*num_cells + j] = data[j*num_cells + i];
+  //   }
+  // }
+  
+  
+  
   const long int dims[] {num_cells, num_cells};
-  PyObject* np_data = PyArray_SimpleNewFromData(2, dims, NPY_DOUBLE, data);
+  PyObject* np_data = PyArray_SimpleNewFromData(2, dims, NPY_FLOAT, data);
   
   return PyTuple_Pack(2, np_data, cell_ids);
 }
