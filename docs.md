@@ -58,6 +58,10 @@ This method writes out a save file, that includes all of the cells in the array.
 ## bcrdist.cellarray.load(string path) -> None
 This method loads in data from a bcrdist save file. The cell array this method is called on has to be empty.
 
+## bcrdist.cellarray.tsnedata() -> pandas.DataFrame
+## bcrdist.cellarray.umapdata() -> pandas.DataFrame
+These methods generate the tsne/umap data and return it as a pandas dataframe instead of plotting it. The dataframe has indices with the cell barcodes, and two columns, umap-x and umap-y or tsne-x and tsne-y
+
 ## bcrdist.cellarray.tsneplot([string path, colorby]) -> None
 ## bcrdist.cellarray.umapplot([string path, colorby]) -> None
 These methods use the distance matrix to generate a 2d umap/tsne plot and save it to a file. If path is not specified, it defaults to the name + "-umap-plot.png"

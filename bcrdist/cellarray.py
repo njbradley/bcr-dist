@@ -6,6 +6,7 @@ import matplotlib.pyplot as plot
 import numpy as np
 import sys
 import os
+import pandas
 
 cbcrdist.init(os.path.dirname(os.path.abspath(__file__)) + '/')
 
@@ -23,7 +24,8 @@ class cellarray(cbcrdist.bcellarray):
         dist, ids = self.distmatrix()
         
         tsne = tsnefunc.fit_transform(dist)
-        return tsne
+        tsneframe = pandas.DataFrame(tsne, index = ids, columns = ["tsne-x", "tsne-y"])
+        return tsneframe
     
     def tsneplot(self, path = None, colorby = None):
         if (path == None):
@@ -48,9 +50,9 @@ class cellarray(cbcrdist.bcellarray):
         plot.clf()
         plot.title(self.name() + " tSNE")
         if (colorby == None):
-            plot.scatter(tsne[:,0], tsne[:,1], s=1)
+            plot.scatter(tsne["tsne-x"], tsne["tsne-y"], s=1)
         else:
-            plot.scatter(tsne[:,0], tsne[:,1], s=1, c=colors)
+            plot.scatter(tsne["tsne-x"], tsne["tsne-y"], s=1, c=colors)
             plot.colorbar()
         plot.savefig(path)
     
@@ -59,14 +61,14 @@ class cellarray(cbcrdist.bcellarray):
         pcafunc = skdecomp.KernelPCA(n_pcs, kernel='precomputed')
         kernel = np.exp(-dist**2 / dist.max()**2)
         pcs = pcafunc.fit_transform(kernel)
-        return pcs
+        pcsframe = pandas.DataFrame(pcs, index=ids, columns=["pc-" + str(i) for i in range(n_pcs)])
+        return pcsframe
     
     def savePCs(self, path = None, n_pcs = 75):
         if (path == None):
             path = self.name() + "-pcs.csv"
         pcs = self.PCdata(n_pcs)
-        pcstxt = np.concatenate((np.array(ids).reshape(-1,1), pcs.astype(str)), axis=1)
-        np.savetxt(path, pcstxt, delimiter=',', fmt='%s', comments='', header = "cell_index," + ','.join(["pc" + str(i) for i in range(n_pcs)]))
+        pcs.to_csv(path)
     
     def umapdata(self):
         import umap
@@ -75,7 +77,8 @@ class cellarray(cbcrdist.bcellarray):
         
         umapfunc = umap.UMAP(metric = "precomputed")
         umapout = umapfunc.fit_transform(dist)
-        return umapout
+        umapframe = pandas.DataFrame(umapout, index=ids, columns=["umap-x", "umap-y"])
+        return umapframe
     
     def umapplot(self, path=None, colorby=None):
         if (path == None):
@@ -83,7 +86,7 @@ class cellarray(cbcrdist.bcellarray):
         
         data = self.tolist()
         
-        umapout = self.umapdata()
+        umap = self.umapdata()
         
         if (type(colorby) == type(lambda x: x)):
             colors = [colorby(cell) for cell in data]
@@ -100,9 +103,9 @@ class cellarray(cbcrdist.bcellarray):
         plot.clf()
         plot.title(self.name() + " UMAP")
         if (colorby == None):
-            plot.scatter(umapout[:,0], umapout[:,1], s=1)
+            plot.scatter(umap["umap-x"], umap["umap-y"], s=1)
         else:
-            plot.scatter(umapout[:,0], umapout[:,1], s=1, c=colors)
+            plot.scatter(umap["umap-x"], umap["umap-y"], s=1, c=colors)
             plot.colorbar()
         plot.savefig(path)
     
@@ -155,3 +158,5 @@ class cellarray(cbcrdist.bcellarray):
         message += self.summary()
         message += ">"
         return message
+
+
